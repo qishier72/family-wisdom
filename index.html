@@ -2,275 +2,333 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>我们的家庭智慧</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>家庭智慧</title>
     
-    <!-- 引入 Tailwind CSS (样式库) -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入图标库 -->
+    <!-- Remix Icon -->
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     
-    <!-- 配置字体和自定义动画 -->
     <style>
-        /* 苹果风格字体 */
-        body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif; }
+        /* Apple San Francisco 字体回退 */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif; 
+            -webkit-tap-highlight-color: transparent;
+        }
         
-        /* 隐藏滚动条但允许滚动 */
+        /* 隐藏滚动条 */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        /* 列表项的浮出动画 (Scroll Reveal) */
-        .reveal-card {
-            opacity: 0;
-            transform: translateY(40px) scale(0.95);
-            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); /* Apple 风格的缓动曲线 */
-        }
-        .reveal-card.visible {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
-
-        /* 磨砂玻璃效果 */
-        .glass {
+        /* 磨砂玻璃 */
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
         }
+
+        /* 极光背景动画 */
+        .aurora-bg {
+            background: radial-gradient(circle at 50% 0%, rgba(100, 180, 255, 0.15) 0%, rgba(255, 255, 255, 0) 50%),
+                        radial-gradient(circle at 0% 0%, rgba(200, 100, 255, 0.05) 0%, rgba(255, 255, 255, 0) 40%);
+        }
+
+        /* 卡片入场动画 */
+        .card-enter {
+            animation: cardPopup 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            opacity: 0;
+            transform: translateY(20px) scale(0.96);
+        }
+        @keyframes cardPopup {
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* 星星点击动画 */
+        .star-anim:active { transform: scale(1.3); }
     </style>
 </head>
-<body class="bg-[#F5F5F7] text-[#1D1D1F] min-h-screen selection:bg-blue-500 selection:text-white pb-24">
+<body class="bg-[#F2F2F7] text-[#1D1D1F] min-h-screen pb-32 aurora-bg">
 
-    <div id="app" class="relative">
+    <div id="app">
         
-        <!-- 顶部 Header -->
-        <header class="sticky top-0 z-40 bg-[#F5F5F7]/80 glass border-b border-gray-200/50 pt-12 pb-4 px-6">
-            <div class="flex justify-between items-end mb-4">
-                <div>
-                    <h1 class="text-4xl font-extrabold tracking-tight text-black">家庭智慧</h1>
-                    <p class="text-xs text-gray-400 font-bold tracking-[0.2em] uppercase mt-1">Our Wisdom Database</p>
-                </div>
-                <!-- 顶部添加按钮 -->
-                <button @click="showModal = true" class="bg-black text-white rounded-full w-10 h-10 flex items-center justify-center shadow-lg active:scale-90 transition-transform">
-                    <i class="ri-add-line text-2xl"></i>
-                </button>
+        <!-- 1. 顶部 Header (居中 + 科技感) -->
+        <header class="sticky top-0 z-40 glass-nav pt-safe-top transition-all duration-300">
+            <div class="px-6 pt-4 pb-4 text-center relative">
+                <p class="text-[10px] font-bold text-blue-500 tracking-[0.2em] uppercase mb-1 opacity-80">Family Wisdom</p>
+                <h1 class="text-2xl font-black tracking-tight text-black flex items-center justify-center gap-2">
+                    <i class="ri-home-heart-fill text-blue-500"></i> 家庭智慧
+                </h1>
             </div>
 
-            <!-- 分类胶囊 (横向滚动) -->
-            <div class="flex space-x-3 overflow-x-auto no-scrollbar py-2">
-                <button 
-                    v-for="cat in categories" 
-                    :key="cat"
-                    @click="currentCategory = cat"
-                    class="whitespace-nowrap px-5 py-2 rounded-full text-sm font-bold transition-all duration-300"
-                    :class="currentCategory === cat ? 'bg-black text-white shadow-lg scale-105' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'"
-                >
-                    {{ cat }}
-                </button>
+            <!-- 筛选区：全显示，不滑动 -->
+            <div class="px-4 pb-4">
+                <!-- 第一行：分类 (Wrap) -->
+                <div class="flex flex-wrap justify-center gap-2 mb-3">
+                    <button 
+                        v-for="cat in categories" 
+                        :key="cat"
+                        @click="currentCategory = cat"
+                        class="px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-200 border"
+                        :class="currentCategory === cat 
+                            ? 'bg-black text-white border-black shadow-md transform scale-105' 
+                            : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'"
+                    >
+                        {{ cat }}
+                    </button>
+                </div>
+
+                <!-- 第二行：发布者筛选 (下拉式，节省空间) -->
+                <div class="flex justify-center">
+                    <div class="relative inline-block">
+                        <select v-model="currentMember" class="appearance-none bg-white/50 border border-gray-200 rounded-lg pl-3 pr-8 py-1 text-xs font-bold text-gray-600 focus:outline-none focus:border-blue-500">
+                            <option value="全部成员">👤 全部成员</option>
+                            <option v-for="m in members" :value="m">{{ m }}</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                            <i class="ri-arrow-down-s-fill text-xs"></i>
+                        </div>
+                    </div>
+                </div>
             </div>
         </header>
 
-        <!-- 列表区域 (瀑布流/时间轴) -->
-        <main class="px-5 py-6 space-y-6 max-w-2xl mx-auto">
+        <!-- 2. 列表区域 -->
+        <main class="px-4 py-4 space-y-5 max-w-xl mx-auto">
             
-            <!-- 加载中提示 -->
-            <div v-if="loading" class="text-center py-20 opacity-50">
-                <i class="ri-loader-4-line animate-spin text-3xl"></i>
-                <p class="text-xs mt-2 font-mono">LOADING DATA...</p>
+            <!-- 加载状态 -->
+            <div v-if="loading" class="flex flex-col items-center justify-center py-20 opacity-50 space-y-4">
+                <div class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                <p class="text-xs font-mono tracking-widest">LOADING...</p>
             </div>
 
             <!-- 空状态 -->
             <div v-if="!loading && filteredList.length === 0" class="text-center py-20 opacity-40">
-                <i class="ri-inbox-line text-4xl"></i>
-                <p class="mt-2">暂无内容</p>
+                <div class="bg-gray-200 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="ri-search-2-line text-3xl text-gray-400"></i>
+                </div>
+                <p>没有找到相关智慧</p>
+                <button @click="resetFilters" class="text-blue-500 text-sm mt-2 font-bold">查看全部</button>
             </div>
 
-            <!-- 卡片循环 -->
-            <!-- 这里的 :class 绑定了随机颜色和动画类 -->
+            <!-- 卡片 -->
             <div 
                 v-for="(item, index) in filteredList" 
                 :key="item.id"
-                class="reveal-card relative rounded-3xl p-6 shadow-xl cursor-pointer overflow-hidden group active:scale-[0.98] transition-all duration-300"
-                :class="item.bg_style || 'bg-white'"
+                class="card-enter bg-white rounded-[24px] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] overflow-hidden cursor-pointer active:scale-[0.98] transition-transform duration-200 border border-white/50"
+                :style="{ animationDelay: index * 0.05 + 's' }"
                 @click="openDetail(item)"
-                v-observe-visibility
             >
-                <!-- 卡片内容 -->
-                <div class="relative z-10">
-                    <!-- 顶部标签 -->
-                    <div class="flex justify-between items-start mb-3 opacity-60">
-                        <span class="text-[10px] font-bold tracking-widest uppercase border border-black/10 px-2 py-0.5 rounded-md">{{ item.category }}</span>
-                        <!-- 类型图标 -->
-                        <i v-if="item.content_type === 'video'" class="ri-movie-fill"></i>
-                        <i v-else-if="item.content_type === 'image'" class="ri-image-2-fill"></i>
-                        <i v-else-if="item.content_type === 'link'" class="ri-link"></i>
-                        <i v-else class="ri-text"></i>
+                <!-- 卡片封面 (如果有图/视频) -->
+                <div v-if="item.content_type === 'image'" class="h-48 w-full bg-gray-100 relative">
+                    <img :src="item.content" class="w-full h-full object-cover">
+                    <div class="absolute top-3 right-3 bg-black/50 backdrop-blur text-white text-[10px] px-2 py-1 rounded-md font-bold">
+                        <i class="ri-image-fill"></i> 图片
+                    </div>
+                </div>
+                <div v-else-if="item.content_type === 'video'" class="h-48 w-full bg-black relative flex items-center justify-center">
+                    <i class="ri-play-circle-fill text-white text-5xl opacity-80"></i>
+                    <div class="absolute top-3 right-3 bg-black/50 backdrop-blur text-white text-[10px] px-2 py-1 rounded-md font-bold">
+                        <i class="ri-movie-fill"></i> 视频
+                    </div>
+                </div>
+
+                <!-- 卡片文本 -->
+                <div class="p-5">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-[10px] font-bold text-blue-500 bg-blue-50 px-2 py-1 rounded-md">{{ item.category }}</span>
+                        <span class="text-[10px] text-gray-400 font-mono">{{ formatDate(item.created_at) }}</span>
                     </div>
 
-                    <!-- 标题 -->
-                    <h3 class="text-2xl font-black leading-tight mb-2 text-black/90">{{ item.title }}</h3>
-
-                    <!-- 内容摘要 (如果是文字) -->
-                    <p v-if="item.content_type === 'text'" class="text-sm font-medium text-black/60 line-clamp-3 mb-4">
+                    <h3 class="text-xl font-bold text-[#1D1D1F] leading-tight mb-2">{{ item.title }}</h3>
+                    
+                    <p v-if="item.content_type === 'text'" class="text-sm text-gray-500 line-clamp-2 mb-4">
                         {{ item.content }}
                     </p>
-                    
-                    <!-- 图片预览 -->
-                    <div v-if="item.content_type === 'image'" class="h-40 w-full rounded-xl overflow-hidden mb-4 bg-black/5">
-                        <img :src="item.content" class="w-full h-full object-cover">
-                    </div>
 
-                    <!-- 底部信息 -->
-                    <div class="flex items-center justify-between pt-4 border-t border-black/5 mt-2">
-                        <div>
-                            <p class="text-[10px] text-black/40 uppercase">智慧来自</p>
-                            <p class="text-sm font-bold text-black/80">{{ item.member_name }}</p>
+                    <!-- 底部：作者 + 评分 -->
+                    <div class="flex items-center justify-between pt-3 border-t border-gray-100 mt-2">
+                        <div class="flex items-center gap-2">
+                            <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-gray-200 to-gray-300 flex items-center justify-center text-[10px] font-bold text-gray-600">
+                                {{ item.member_name.charAt(0) }}
+                            </div>
+                            <span class="text-xs font-bold text-gray-600">{{ item.member_name }}</span>
                         </div>
-                        <p class="text-[10px] font-mono text-black/40">{{ formatDate(item.created_at) }}</p>
+
+                        <!-- 星级展示 -->
+                        <div class="flex items-center gap-1" @click.stop="startRating(item)">
+                            <i class="ri-star-fill text-yellow-400 text-sm"></i>
+                            <span class="text-xs font-bold text-gray-700">{{ (item.rating_sum / (item.rating_count || 1)).toFixed(1) }}</span>
+                            <span class="text-[10px] text-gray-400">({{ item.rating_count }})</span>
+                        </div>
                     </div>
                 </div>
             </div>
         </main>
 
-        <!-- 发布弹窗 (全屏) -->
+        <!-- 3. Apple 风格悬浮按钮 (灵动岛风格) -->
+        <div class="fixed bottom-8 left-0 right-0 flex justify-center z-40 pointer-events-none">
+            <button 
+                @click="showModal = true"
+                class="pointer-events-auto bg-black/90 backdrop-blur-xl text-white pl-5 pr-6 py-3.5 rounded-full shadow-2xl flex items-center gap-3 active:scale-90 transition-all duration-300 hover:bg-black"
+            >
+                <div class="w-6 h-6 rounded-full bg-white text-black flex items-center justify-center">
+                    <i class="ri-add-line font-bold"></i>
+                </div>
+                <span class="font-bold text-sm tracking-wide">记录新智慧</span>
+            </button>
+        </div>
+
+        <!-- 4. 发布弹窗 (修复遮挡问题) -->
         <div v-if="showModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-            <!-- 背景遮罩 -->
-            <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" @click="showModal = false"></div>
+            <div class="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity" @click="showModal = false"></div>
             
-            <!-- 弹窗主体 -->
-            <div class="bg-white w-full max-w-lg h-[90vh] sm:h-auto sm:rounded-3xl rounded-t-3xl shadow-2xl z-10 flex flex-col overflow-hidden animate-[slideUp_0.3s_ease-out]">
+            <div class="bg-white w-full h-[92vh] sm:h-auto sm:max-w-lg sm:rounded-3xl rounded-t-[32px] shadow-2xl z-10 flex flex-col overflow-hidden animate-[slideUp_0.4s_cubic-bezier(0.16,1,0.3,1)]">
                 
-                <div class="p-6 border-b border-gray-100 flex justify-between items-center">
-                    <h2 class="text-xl font-bold text-black">记录新智慧</h2>
-                    <button @click="showModal = false" class="bg-gray-100 text-gray-500 rounded-full w-8 h-8 flex items-center justify-center">
+                <!-- 顶部栏 (加大了 padding 防止遮挡) -->
+                <div class="pt-6 pb-4 px-6 border-b border-gray-100 flex justify-between items-center bg-white/80 backdrop-blur z-20 sticky top-0">
+                    <h2 class="text-lg font-black text-black">New Wisdom</h2>
+                    <button @click="showModal = false" class="bg-gray-100 text-gray-500 rounded-full w-8 h-8 flex items-center justify-center hover:bg-gray-200">
                         <i class="ri-close-line text-xl"></i>
                     </button>
                 </div>
 
-                <div class="flex-1 overflow-y-auto p-6 space-y-6">
-                    <!-- 1. Who -->
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">我是谁 (发布者)</label>
-                        <select v-model="form.member_name" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-lg font-bold outline-none focus:ring-2 focus:ring-black/10">
-                            <option value="" disabled>请选择...</option>
-                            <option v-for="m in members" :value="m">{{ m }}</option>
-                        </select>
+                <div class="flex-1 overflow-y-auto p-6 space-y-8 pb-32">
+                    
+                    <!-- 步骤条 -->
+                    <div class="flex items-center justify-between px-2">
+                        <div v-for="i in 3" :key="i" class="h-1 rounded-full flex-1 mx-1" :class="step >= i ? 'bg-blue-500' : 'bg-gray-200'"></div>
                     </div>
 
-                    <!-- 2. Category -->
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">分类</label>
-                        <div class="flex flex-wrap gap-2">
-                            <button 
-                                v-for="cat in availableCategories" 
-                                :key="cat"
-                                @click="form.category = cat"
-                                class="px-3 py-1.5 rounded-lg text-sm border transition-colors"
-                                :class="form.category === cat ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-200'"
-                            >
-                                {{ cat }}
-                            </button>
+                    <!-- 1. 基本信息 -->
+                    <div class="space-y-4">
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">01. 基础信息</p>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold mb-1.5 text-gray-500">发布者</label>
+                                <select v-model="form.member_name" class="w-full bg-gray-50 border-0 rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-blue-500/20 outline-none">
+                                    <option value="" disabled>选择...</option>
+                                    <option v-for="m in members" :value="m">{{ m }}</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold mb-1.5 text-gray-500">分类</label>
+                                <select v-model="form.category" class="w-full bg-gray-50 border-0 rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-blue-500/20 outline-none">
+                                    <option value="" disabled>选择...</option>
+                                    <option v-for="c in availableCategories" :value="c">{{ c }}</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- 3. Content Type -->
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">内容类型</label>
-                        <div class="bg-gray-100 p-1 rounded-xl flex">
+                    <!-- 2. 内容类型 -->
+                    <div class="space-y-4">
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">02. 内容形式</p>
+                        <div class="flex bg-gray-100 p-1 rounded-xl">
                             <button 
                                 v-for="type in contentTypes" 
                                 @click="form.content_type = type.val"
-                                class="flex-1 py-2 rounded-lg text-xs font-bold transition-all"
-                                :class="form.content_type === type.val ? 'bg-white text-black shadow-sm' : 'text-gray-400'"
+                                class="flex-1 py-2 rounded-lg text-xs font-bold transition-all duration-300"
+                                :class="form.content_type === type.val ? 'bg-white text-black shadow-sm scale-100' : 'text-gray-400 scale-95'"
                             >
                                 {{ type.label }}
                             </button>
                         </div>
                     </div>
 
-                    <!-- 4. Inputs -->
+                    <!-- 3. 核心内容 -->
                     <div class="space-y-4">
-                        <input type="text" v-model="form.title" placeholder="输入标题..." class="w-full text-2xl font-black border-b border-gray-200 py-2 focus:outline-none focus:border-black placeholder-gray-300">
+                        <input type="text" v-model="form.title" placeholder="输入核心标题..." class="w-full text-2xl font-black bg-transparent border-0 border-b-2 border-gray-100 py-2 focus:border-black focus:ring-0 placeholder-gray-300 transition-colors">
                         
-                        <!-- 动态输入区 -->
-                        <div v-if="form.content_type === 'text'">
-                            <textarea v-model="form.content" rows="4" placeholder="写下你的智慧..." class="w-full bg-gray-50 rounded-xl p-4 focus:outline-none"></textarea>
-                        </div>
-
-                        <div v-else-if="form.content_type === 'link'">
-                            <input type="url" v-model="form.content" placeholder="https://..." class="w-full bg-gray-50 rounded-xl p-4 text-blue-600">
-                        </div>
-
-                        <!-- 上传区 (Image/Video) -->
-                        <div v-else class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center bg-gray-50 relative">
-                            <input type="file" @change="handleUpload" class="absolute inset-0 opacity-0 w-full h-full cursor-pointer">
-                            <div v-if="uploading" class="text-blue-500 font-bold animate-pulse">上传中...</div>
-                            <div v-else-if="form.content">
-                                <span class="text-green-600 font-bold block">上传成功!</span>
-                                <span class="text-xs text-gray-400 truncate max-w-xs inline-block">{{ form.content }}</span>
+                        <!-- 上传组件 -->
+                        <div v-if="['image','video'].includes(form.content_type)" class="border-2 border-dashed border-gray-200 rounded-2xl p-8 text-center bg-gray-50 hover:bg-white hover:border-blue-300 transition-all relative overflow-hidden group">
+                            <input type="file" @change="handleUpload" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                            
+                            <div v-if="uploading" class="flex flex-col items-center animate-pulse">
+                                <i class="ri-upload-cloud-2-fill text-3xl text-blue-500"></i>
+                                <span class="text-xs font-bold text-blue-500 mt-2">正在上传到云端...</span>
                             </div>
-                            <div v-else>
-                                <i class="ri-upload-cloud-2-line text-3xl text-gray-400"></i>
-                                <p class="text-sm text-gray-500 mt-2">点击上传文件</p>
+                            <div v-else-if="form.content" class="relative z-0">
+                                <img v-if="form.content_type==='image'" :src="form.content" class="h-32 object-contain mx-auto rounded-lg shadow-sm">
+                                <div v-else class="text-green-500 font-bold"><i class="ri-check-line"></i> 视频已就绪</div>
+                                <span class="text-[10px] text-gray-400 mt-2 block">点击可重新替换</span>
+                            </div>
+                            <div v-else class="group-hover:scale-105 transition-transform">
+                                <div class="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center mx-auto mb-3">
+                                    <i class="ri-add-line text-xl text-gray-400"></i>
+                                </div>
+                                <p class="text-sm font-bold text-gray-500">点击上传文件</p>
                             </div>
                         </div>
 
-                        <input type="text" v-model="form.extra_note" placeholder="备注 (可选)..." class="w-full text-sm py-2 border-b border-gray-200 focus:outline-none placeholder-gray-300">
+                        <textarea v-if="form.content_type === 'text'" v-model="form.content" rows="5" placeholder="请详细描述..." class="w-full bg-gray-50 rounded-2xl p-4 text-sm font-medium focus:bg-white focus:ring-2 focus:ring-black/5 outline-none transition-all"></textarea>
+                        
+                        <input v-if="form.content_type === 'link'" type="url" v-model="form.content" placeholder="https://" class="w-full bg-blue-50 text-blue-600 rounded-xl p-4 text-sm font-bold outline-none">
+
+                        <input type="text" v-model="form.extra_note" placeholder="备注信息 (可选)..." class="w-full text-xs py-3 border-b border-gray-100 focus:outline-none focus:border-gray-300">
                     </div>
-                </div>
-
-                <div class="p-4 border-t border-gray-100 bg-white">
+                    
                     <button 
                         @click="submit" 
                         :disabled="!isFormValid || uploading"
-                        class="w-full bg-black text-white font-bold py-4 rounded-xl text-lg shadow-xl hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                        class="w-full bg-black text-white font-bold py-4 rounded-2xl text-lg shadow-xl shadow-gray-300 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:transform-none"
                     >
-                        {{ uploading ? '请等待上传完成...' : '发布' }}
+                        {{ uploading ? '上传处理中...' : '确认发布' }}
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- 详情页弹窗 (全屏查看) -->
+        <!-- 评分弹窗 (小) -->
+        <div v-if="ratingItem" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm" @click="ratingItem = null">
+            <div class="bg-white p-6 rounded-2xl shadow-2xl text-center w-64 animate-[cardPopup_0.3s_ease]" @click.stop>
+                <p class="text-sm font-bold text-gray-500 mb-4">给这条智慧打分</p>
+                <div class="flex justify-center gap-2 mb-4">
+                    <button v-for="star in 5" :key="star" @click="submitRate(star)" class="text-3xl star-anim transition-colors text-gray-200 hover:text-yellow-400 focus:text-yellow-400">
+                        <i class="ri-star-fill"></i>
+                    </button>
+                </div>
+                <button @click="ratingItem = null" class="text-xs text-gray-400 underline">取消</button>
+            </div>
+        </div>
+
+        <!-- 详情弹窗 -->
         <div v-if="detailItem" class="fixed inset-0 z-[60] flex items-center justify-center p-0 sm:p-4">
-            <div class="absolute inset-0 bg-white/90 backdrop-blur-xl" @click="detailItem = null"></div>
+            <div class="absolute inset-0 bg-white/95 backdrop-blur-xl" @click="detailItem = null"></div>
             
-            <div class="relative w-full h-full sm:h-[85vh] sm:max-w-2xl bg-white sm:rounded-3xl flex flex-col shadow-2xl overflow-hidden animate-[zoomIn_0.2s_ease-out]">
-                <!-- 关闭按钮 -->
-                <button @click="detailItem = null" class="absolute top-4 right-4 z-20 bg-gray-100/50 backdrop-blur text-black w-10 h-10 rounded-full flex items-center justify-center">
+            <div class="relative w-full h-full sm:h-[85vh] sm:max-w-2xl bg-white sm:rounded-3xl flex flex-col shadow-2xl overflow-hidden animate-[cardPopup_0.3s_cubic-bezier(0.16,1,0.3,1)]">
+                <button @click="detailItem = null" class="absolute top-6 right-6 z-20 bg-gray-100/80 backdrop-blur text-black w-10 h-10 rounded-full flex items-center justify-center transition-transform hover:rotate-90">
                     <i class="ri-close-line text-2xl"></i>
                 </button>
 
-                <div class="overflow-y-auto h-full p-8 custom-scrollbar">
-                    <span class="text-xs font-mono text-blue-600 uppercase bg-blue-50 px-2 py-1 rounded inline-block mb-4">{{ detailItem.category }}</span>
+                <div class="overflow-y-auto h-full p-8 pb-32">
+                    <div class="flex items-center gap-2 mb-6">
+                         <span class="text-[10px] font-bold tracking-wider text-white bg-black px-3 py-1 rounded-full uppercase">{{ detailItem.category }}</span>
+                         <span class="text-xs font-bold text-gray-400">{{ detailItem.member_name }}</span>
+                    </div>
+                    
                     <h1 class="text-3xl sm:text-4xl font-black text-black leading-tight mb-8">{{ detailItem.title }}</h1>
 
-                    <!-- 内容渲染 -->
-                    <div class="mb-8">
-                        <img v-if="detailItem.content_type === 'image'" :src="detailItem.content" class="w-full rounded-2xl shadow-lg">
-                        
-                        <video v-else-if="detailItem.content_type === 'video'" controls class="w-full rounded-2xl shadow-lg bg-black">
+                    <div class="mb-8 rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+                        <img v-if="detailItem.content_type === 'image'" :src="detailItem.content" class="w-full bg-gray-50">
+                        <video v-else-if="detailItem.content_type === 'video'" controls class="w-full bg-black aspect-video">
                             <source :src="detailItem.content">
                         </video>
-                        
-                        <a v-else-if="detailItem.content_type === 'link'" :href="detailItem.content" target="_blank" class="block p-6 bg-blue-50 rounded-xl text-blue-600 break-all text-center underline">
-                            <i class="ri-external-link-line inline mr-1"></i> {{ detailItem.content }}
-                        </a>
-                        
-                        <p v-else class="text-xl leading-relaxed text-gray-800 font-serif whitespace-pre-wrap">{{ detailItem.content }}</p>
+                        <div v-else-if="detailItem.content_type === 'link'" class="p-10 bg-blue-50 text-center">
+                             <a :href="detailItem.content" target="_blank" class="text-blue-600 font-bold underline text-lg break-all">{{ detailItem.content }}</a>
+                        </div>
+                        <div v-else class="p-6 bg-gray-50">
+                            <p class="text-lg leading-relaxed text-gray-800 whitespace-pre-wrap">{{ detailItem.content }}</p>
+                        </div>
                     </div>
 
-                    <!-- Meta Info -->
-                    <div class="bg-gray-50 rounded-2xl p-6 space-y-4">
-                        <div class="flex justify-between border-b border-gray-200 pb-2">
-                            <span class="text-gray-400 text-sm">智慧来自</span>
-                            <span class="font-bold">{{ detailItem.member_name }}</span>
-                        </div>
-                        <div class="flex justify-between border-b border-gray-200 pb-2">
-                            <span class="text-gray-400 text-sm">发布时间</span>
-                            <span class="font-mono text-sm">{{ new Date(detailItem.created_at).toLocaleString() }}</span>
-                        </div>
-                        <div v-if="detailItem.extra_note">
-                            <span class="text-gray-400 text-sm block mb-1">备注</span>
-                            <p class="text-gray-600">{{ detailItem.extra_note }}</p>
+                    <div class="bg-gray-50 rounded-xl p-5 space-y-3">
+                        <p class="text-xs text-gray-400 uppercase font-bold">Additional Notes</p>
+                        <p class="text-sm text-gray-600">{{ detailItem.extra_note || '暂无备注' }}</p>
+                        <div class="border-t border-gray-200 pt-3 flex justify-between text-xs text-gray-400">
+                            <span>ID: #{{ detailItem.id }}</span>
+                            <span>{{ new Date(detailItem.created_at).toLocaleString() }}</span>
                         </div>
                     </div>
                 </div>
@@ -279,34 +337,37 @@
 
     </div>
 
-    <!-- 脚本区域：Vue 和 Supabase 逻辑 -->
+    <!-- VUE 3 & SUPABASE -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
     <script>
         // ==========================================
-        // 请在这里填入你的 Key (从 Supabase 设置里复制)
+        // 配置区：请替换你的 Key
         // ==========================================
-        const SUPABASE_URL = 'https://ugoksbtsjoktcmukmeuh.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnb2tzYnRzam9rdGNtdWttZXVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNjYyMDYsImV4cCI6MjA4Njg0MjIwNn0.11Vc-X5Y6qbGqOk6ydbb65VrEBYsuGRwLlQnj4nsVeA';
+        const SUPABASE_URL = '你的_SUPABASE_URL';
+        const SUPABASE_KEY = '你的_SUPABASE_ANON_KEY';
         // ==========================================
 
         const { createApp, ref, computed, reactive, onMounted } = Vue;
 
-        const app = createApp({
+        createApp({
             setup() {
-                // 初始化 Supabase
                 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-                // 数据状态
+                // 核心数据
                 const wisdomList = ref([]);
                 const loading = ref(true);
                 const showModal = ref(false);
                 const detailItem = ref(null);
-                const currentCategory = ref('全部');
+                const ratingItem = ref(null);
                 const uploading = ref(false);
 
-                // 预设数据
+                // 筛选状态
+                const currentCategory = ref('全部');
+                const currentMember = ref('全部成员');
+
+                // 静态配置
                 const members = ['爷爷', '奶奶', '领航者', '彬彬有礼', '晴子老师', '回春丹主唱（少年版）', '先读说明书'];
                 const availableCategories = ['私房菜谱', '生活妙招', '家庭智慧', '人生经验', '美好时光', '其他'];
                 const contentTypes = [
@@ -316,32 +377,31 @@
                     { val: 'link', label: '链接' }
                 ];
 
-                // 表单数据
+                // 表单
                 const form = reactive({
                     member_name: '', category: '', content_type: 'text', content: '', title: '', extra_note: ''
                 });
 
-                // 计算属性
+                // Computed
                 const categories = computed(() => ['全部', ...availableCategories]);
-                const filteredList = computed(() => {
-                    if (currentCategory.value === '全部') return wisdomList.value;
-                    return wisdomList.value.filter(i => i.category === currentCategory.value);
+                const step = computed(() => {
+                    if (form.member_name && form.category) return 2;
+                    if (form.title) return 3;
+                    return 1;
                 });
                 const isFormValid = computed(() => form.member_name && form.category && form.title && form.content);
+                
+                // 双重筛选逻辑
+                const filteredList = computed(() => {
+                    return wisdomList.value.filter(item => {
+                        const matchCat = currentCategory.value === '全部' || item.category === currentCategory.value;
+                        const matchMem = currentMember.value === '全部成员' || item.member_name === currentMember.value;
+                        return matchCat && matchMem;
+                    });
+                });
 
-                // 科技感颜色池 (带透明度的背景色)
-                const techColors = [
-                    'bg-blue-500/10 border-blue-200/20 text-blue-900',
-                    'bg-purple-500/10 border-purple-200/20 text-purple-900',
-                    'bg-emerald-500/10 border-emerald-200/20 text-emerald-900',
-                    'bg-orange-500/10 border-orange-200/20 text-orange-900',
-                    'bg-cyan-500/10 border-cyan-200/20 text-cyan-900',
-                    'bg-gray-500/10 border-gray-200/20 text-gray-900'
-                ];
+                // --- Methods ---
 
-                // --- 方法 ---
-
-                // 获取数据
                 const fetchData = async () => {
                     loading.value = true;
                     const { data, error } = await supabase.from('family_wisdom').select('*').order('created_at', { ascending: false });
@@ -349,95 +409,80 @@
                     loading.value = false;
                 };
 
-                // 处理文件上传
+                const resetFilters = () => {
+                    currentCategory.value = '全部';
+                    currentMember.value = '全部成员';
+                };
+
                 const handleUpload = async (e) => {
                     const file = e.target.files[0];
                     if (!file) return;
                     uploading.value = true;
+                    const fileName = `${Date.now()}_${file.name.replace(/[^\w\.]/g, '')}`; // 简单清洗文件名
                     
-                    const fileName = `${Date.now()}_${file.name}`;
-                    const { data, error } = await supabase.storage.from('family_uploads').upload(fileName, file);
-                    
+                    const { error } = await supabase.storage.from('family_uploads').upload(fileName, file);
                     if (error) {
-                        alert('上传失败 (请检查 Bucket 是否创建): ' + error.message);
+                        alert('上传出错: ' + error.message);
                         uploading.value = false;
                         return;
                     }
-                    
                     const { data: { publicUrl } } = supabase.storage.from('family_uploads').getPublicUrl(fileName);
                     form.content = publicUrl;
                     uploading.value = false;
                 };
 
-                // 提交表单
                 const submit = async () => {
-                    // 随机分配一个颜色样式
-                    const randomColor = techColors[Math.floor(Math.random() * techColors.length)];
-                    
                     const { error } = await supabase.from('family_wisdom').insert([{
                         ...form,
-                        bg_style: randomColor
+                        rating_sum: 5,  // 默认初始分
+                        rating_count: 1
                     }]);
-
-                    if (error) {
-                        alert('发布失败: ' + error.message);
-                    } else {
-                        // 重置表单并刷新
-                        form.title = ''; form.content = ''; form.extra_note = '';
+                    if (!error) {
                         showModal.value = false;
+                        // 清空表单
+                        Object.assign(form, { member_name: '', category: '', content_type: 'text', content: '', title: '', extra_note: '' });
                         fetchData();
+                    } else {
+                        alert(error.message);
                     }
                 };
 
-                const openDetail = (item) => { detailItem.value = item; };
-                
+                const startRating = (item) => { ratingItem.value = item; };
+
+                const submitRate = async (score) => {
+                    if (!ratingItem.value) return;
+                    const item = ratingItem.value;
+                    
+                    // 乐观更新 (UI先变)
+                    item.rating_sum += score;
+                    item.rating_count += 1;
+                    
+                    // 数据库更新
+                    await supabase.from('family_wisdom').update({
+                        rating_sum: item.rating_sum,
+                        rating_count: item.rating_count
+                    }).eq('id', item.id);
+
+                    ratingItem.value = null;
+                };
+
                 const formatDate = (str) => {
                     const d = new Date(str);
-                    return `${d.getMonth()+1}月${d.getDate()}日`;
-                }
+                    return `${d.getMonth()+1}/${d.getDate()}`;
+                };
 
-                // 初始化
-                onMounted(() => {
-                    fetchData();
-                });
+                const openDetail = (item) => { detailItem.value = item; };
+
+                onMounted(fetchData);
 
                 return {
-                    wisdomList, loading, showModal, detailItem, currentCategory, uploading,
-                    members, categories, availableCategories, contentTypes, form,
-                    filteredList, isFormValid,
-                    handleUpload, submit, openDetail, formatDate
+                    wisdomList, loading, showModal, detailItem, ratingItem, uploading,
+                    currentCategory, currentMember, categories, members, availableCategories, contentTypes,
+                    form, step, isFormValid, filteredList,
+                    fetchData, resetFilters, handleUpload, submit, openDetail, startRating, submitRate, formatDate
                 };
             }
-        });
-
-        // 自定义指令：滚动监听动画
-        app.directive('observe-visibility', {
-            mounted(el) {
-                const observer = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            el.classList.add('visible');
-                            observer.unobserve(el);
-                        }
-                    });
-                }, { threshold: 0.1 });
-                observer.observe(el);
-            }
-        });
-
-        app.mount('#app');
+        }).mount('#app');
     </script>
-
-    <!-- 补充动画样式 -->
-    <style>
-        @keyframes slideUp {
-            from { transform: translateY(100%); }
-            to { transform: translateY(0); }
-        }
-        @keyframes zoomIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-        }
-    </style>
 </body>
 </html>
