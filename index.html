@@ -5,16 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>家庭智慧</title>
     
-    <!-- 1. 引入核心库 -->
+    <!-- 1. 核心库 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     
     <style>
-        /* 基础设置 */
+        /* 基础样式 */
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif; 
             -webkit-tap-highlight-color: transparent;
             background-color: #F2F2F7;
+            overscroll-behavior-y: none;
         }
         
         /* 隐藏滚动条 */
@@ -29,7 +30,7 @@
             position: fixed; inset: 0; z-index: 9999;
             background: white;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transition: opacity 0.5s ease, visibility 0.5s;
+            transition: opacity 0.6s ease, visibility 0.6s;
         }
         .breathing { animation: breathe 2s infinite ease-in-out; }
         @keyframes breathe {
@@ -39,16 +40,16 @@
 
         /* 智能导航栏动画 */
         .smart-header {
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             will-change: transform;
         }
         .header-hidden {
-            transform: translateY(-120%); /* 向上完全隐藏 */
+            transform: translateY(-120%);
         }
 
         /* 磨砂玻璃 */
         .glass-nav {
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-bottom: 1px solid rgba(0,0,0,0.05);
@@ -62,41 +63,41 @@
         }
 
         /* 动画类 */
-        .card-enter { animation: slideUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; opacity: 0; transform: translateY(20px); }
+        .card-enter { animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; opacity: 0; transform: translateY(30px); }
         @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
+        
+        /* 防止 Vue 加载前的乱码，但在启动屏遮挡下其实不重要，为了保险保留 */
         [v-cloak] { display: none; }
     </style>
 </head>
 <body class="text-[#1D1D1F] aurora-bg">
 
-    <!-- 0. 启动屏 (增加了一个强制关闭按钮，以防万一) -->
+    <!-- 0. 启动屏 -->
     <div id="splash-screen">
         <div class="breathing flex flex-col items-center">
             <i class="ri-home-heart-fill text-6xl text-blue-500 mb-4"></i>
             <h1 class="text-2xl font-black tracking-widest text-black">家庭智慧</h1>
-            <p class="text-xs text-gray-400 mt-2 font-mono uppercase tracking-[0.3em]">Loading...</p>
+            <p class="text-xs text-gray-400 mt-2 font-mono uppercase tracking-[0.3em]">Loading Wisdom...</p>
         </div>
-        <!-- 如果卡住超过5秒，显示这个跳过按钮 -->
-        <button onclick="document.getElementById('splash-screen').style.display='none'" class="mt-8 text-xs text-gray-300 underline opacity-0" style="animation: fadeIn 1s 5s forwards;">
-            如果长时间未响应，点击此处进入
-        </button>
+        <!-- 这里的 Loading 文字会在出错时变成错误提示 -->
+        <p id="error-msg" class="text-red-500 text-xs mt-8 px-8 text-center hidden"></p>
     </div>
 
+    <!-- Vue 应用挂载点 -->
     <div id="app" v-cloak>
         
-        <!-- 1. 智能 Header (向下滚隐藏，向上滚出现) -->
+        <!-- 1. 智能 Header (向下滚隐藏) -->
         <header 
             class="fixed top-0 left-0 right-0 z-40 glass-nav pt-safe-top smart-header shadow-sm"
             :class="{ 'header-hidden': !showHeader }"
         >
-            <!-- 标题栏 -->
-            <div class="px-6 pt-3 pb-2 text-center relative flex justify-center items-center">
+            <div class="px-6 pt-3 pb-2 text-center relative flex justify-center items-center cursor-pointer" @click="scrollToTop">
                 <h1 class="text-lg font-black tracking-tight text-black flex items-center gap-2">
                     <i class="ri-home-heart-fill text-blue-500"></i> 家庭智慧
                 </h1>
             </div>
 
-            <!-- 筛选区 -->
+            <!-- 筛选栏 -->
             <div class="px-4 pb-3">
                 <div class="flex flex-wrap justify-center gap-2 mb-2">
                     <button 
@@ -111,11 +112,10 @@
                         {{ cat }}
                     </button>
                 </div>
-                <!-- 成员筛选 -->
                 <div class="flex justify-center">
-                    <div class="relative bg-gray-100/50 rounded-lg px-3 py-1 flex items-center gap-1">
+                    <div class="relative bg-gray-100/50 rounded-lg px-3 py-1 flex items-center gap-1 cursor-pointer">
                         <i class="ri-user-line text-xs text-gray-400"></i>
-                        <select v-model="currentMember" @change="scrollToTop()" class="bg-transparent border-0 text-xs font-bold text-gray-600 focus:outline-none appearance-none pr-4">
+                        <select v-model="currentMember" @change="scrollToTop" class="bg-transparent border-0 text-xs font-bold text-gray-600 focus:outline-none appearance-none pr-4">
                             <option value="全部成员">全部成员</option>
                             <option v-for="m in members" :value="m">{{ m }}</option>
                         </select>
@@ -125,34 +125,40 @@
             </div>
         </header>
 
-        <!-- 占位高度 (防止内容被遮挡) -->
+        <!-- 占位高度 -->
         <div class="h-32"></div>
 
-        <!-- 2. 内容列表 -->
+        <!-- 2. 内容区域 -->
         <main class="px-4 pb-24 space-y-4 max-w-xl mx-auto min-h-screen">
             
+            <!-- 列表加载中的转圈 (如果启动屏没了，但数据还在请求，显示这个) -->
+            <div v-if="loading" class="flex flex-col items-center justify-center py-20 opacity-50 space-y-4">
+                <i class="ri-loader-4-line text-3xl animate-spin text-blue-500"></i>
+                <p class="text-xs font-bold text-gray-400">正在同步家庭数据...</p>
+            </div>
+
             <!-- 空状态 -->
             <div v-if="!loading && filteredList.length === 0" class="text-center py-20 opacity-40">
                 <div class="bg-white w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-                    <i class="ri-search-line text-3xl text-gray-300"></i>
+                    <i class="ri-inbox-line text-3xl text-gray-300"></i>
                 </div>
-                <p class="text-sm text-gray-400 font-bold">这里空空如也</p>
-                <button @click="resetFilters" class="text-blue-500 text-xs mt-2 font-bold">显示全部</button>
+                <p class="text-sm text-gray-400 font-bold">暂无相关记录</p>
+                <button @click="resetFilters" class="text-blue-500 text-xs mt-2 font-bold underline">查看全部</button>
             </div>
 
-            <!-- 卡片 -->
+            <!-- 列表卡片 -->
             <div 
                 v-for="(item, index) in filteredList" 
                 :key="item.id"
-                class="card-enter bg-white rounded-[20px] shadow-[0_4px_20px_rgba(0,0,0,0.03)] overflow-hidden cursor-pointer active:scale-[0.98] transition-transform duration-200 border border-white"
+                class="card-enter bg-white rounded-[24px] shadow-[0_8px_30px_rgba(0,0,0,0.04)] overflow-hidden cursor-pointer active:scale-[0.98] transition-transform duration-200 border border-white"
                 :style="{ animationDelay: index * 0.05 + 's' }"
                 @click="openDetail(item)"
             >
-                <!-- 封面图/视频 -->
-                <div v-if="item.content_type === 'image'" class="h-44 w-full bg-gray-100 relative overflow-hidden">
+                <!-- 封面 -->
+                <div v-if="item.content_type === 'image'" class="h-48 w-full bg-gray-100 relative overflow-hidden">
                     <img :src="item.content" class="w-full h-full object-cover">
                 </div>
-                <div v-else-if="item.content_type === 'video'" class="h-44 w-full bg-black relative flex items-center justify-center">
+                <div v-else-if="item.content_type === 'video'" class="h-48 w-full bg-black relative flex items-center justify-center">
                     <i class="ri-play-circle-fill text-white text-5xl opacity-80 backdrop-blur-sm rounded-full"></i>
                 </div>
 
@@ -182,7 +188,7 @@
             </div>
         </main>
 
-        <!-- 3. 底部悬浮按钮 (向下滚时也隐藏，腾出空间) -->
+        <!-- 3. 底部悬浮按钮 (智能隐藏) -->
         <div class="fixed bottom-8 left-0 right-0 flex justify-center z-30 pointer-events-none transition-transform duration-500" :class="{'translate-y-32': !showHeader}">
             <button 
                 @click="openAddModal"
@@ -260,7 +266,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- 评分弹窗 -->
         <div v-if="ratingItem" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm" @click="ratingItem=null">
             <div class="bg-white p-6 rounded-3xl shadow-2xl text-center w-64" @click.stop>
@@ -278,34 +284,31 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
     <script>
-        // ==========================================
-        // ⚠️⚠️⚠️ 请务必在此处填入你的 Key ⚠️⚠️⚠️
-        const SUPABASE_URL = 'https://ugoksbtsjoktcmukmeuh.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnb2tzYnRzam9rdGNtdWttZXVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNjYyMDYsImV4cCI6MjA4Njg0MjIwNn0.11Vc-X5Y6qbGqOk6ydbb65VrEBYsuGRwLlQnj4nsVeA';
-        // ==========================================
-
         const { createApp, ref, computed, reactive, onMounted, onUnmounted } = Vue;
-
-        // 保底逻辑：如果Vue出错了，3秒后强制关闭启动屏，显示页面（或者显示空页面）
-        setTimeout(() => {
-            const splash = document.getElementById('splash-screen');
-            if(splash && splash.style.opacity !== '0') {
-                console.warn('Vue加载超时，强制关闭启动屏');
-                splash.style.opacity = '0';
-                setTimeout(() => splash.style.display = 'none', 500);
-            }
-        }, 3000);
 
         createApp({
             setup() {
-                // 检查 Key 是否填写
-                if(SUPABASE_URL.includes('你的_')) {
-                    alert('请在代码底部填入正确的 Supabase URL 和 Key，否则无法连接数据库！');
+                // ==========================================
+                // ⚠️ 关键点：请在这里替换你的 Supabase Key ⚠️
+                // ==========================================
+                const SUPABASE_URL = '你的_SUPABASE_URL';
+                const SUPABASE_KEY = '你的_SUPABASE_ANON_KEY';
+                // ==========================================
+
+                // 安全检查：如果 Key 没填，直接在启动屏显示错误
+                if (SUPABASE_URL.includes('你的_')) {
+                    const errorMsg = document.getElementById('error-msg');
+                    if(errorMsg) {
+                        errorMsg.textContent = "配置错误：请编辑 index.html，在代码底部填入正确的 Supabase URL 和 Key。";
+                        errorMsg.classList.remove('hidden');
+                    }
+                    throw new Error("Missing Credentials");
                 }
 
+                // 初始化 Supabase
                 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                
-                // 数据
+
+                // 数据状态
                 const wisdomList = ref([]);
                 const loading = ref(true);
                 const showModal = ref(false);
@@ -314,6 +317,8 @@
                 const uploading = ref(false);
                 const currentCategory = ref('全部');
                 const currentMember = ref('全部成员');
+                
+                // Header 智能显隐
                 const showHeader = ref(true);
                 const lastScrollTop = ref(0);
 
@@ -323,22 +328,23 @@
                 const contentTypes = [{ val: 'text', label: '文字' }, { val: 'image', label: '图片' }, { val: 'video', label: '视频' }, { val: 'link', label: '链接' }];
                 const form = reactive({ member_name: '', category: '', content_type: 'text', content: '', title: '', extra_note: '' });
 
+                // 计算属性
                 const categories = computed(() => ['全部', ...availableCategories]);
                 const isFormValid = computed(() => form.member_name && form.category && form.title && form.content);
                 const filteredList = computed(() => wisdomList.value.filter(item => (currentCategory.value === '全部' || item.category === currentCategory.value) && (currentMember.value === '全部成员' || item.member_name === currentMember.value)));
 
-                // 核心逻辑
+                // 核心方法
                 const fetchData = async () => {
                     loading.value = true;
                     const { data, error } = await supabase.from('family_wisdom').select('*').order('created_at', { ascending: false });
                     if (!error) wisdomList.value = data;
                     loading.value = false;
                     
-                    // 数据加载完，优雅关闭启动屏
+                    // 数据加载完成，移除启动屏
                     const splash = document.getElementById('splash-screen');
                     if(splash) {
                         splash.style.opacity = '0';
-                        splash.style.visibility = 'hidden';
+                        setTimeout(() => splash.style.visibility = 'hidden', 600);
                     }
                 };
 
@@ -351,16 +357,16 @@
                     }
                 };
 
-                // 历史记录 API (左滑返回)
+                // 历史记录 API
                 window.addEventListener('popstate', () => {
                     if (detailItem.value) detailItem.value = null;
                     else if (showModal.value) showModal.value = false;
                 });
                 const openDetail = (item) => { history.pushState({modal:'detail'},null,''); detailItem.value = item; };
-                const closeDetail = () => { history.back(); };
+                const closeDetail = () => history.back();
                 const openAddModal = () => { history.pushState({modal:'add'},null,''); showModal.value = true; };
-                const closeModal = () => { history.back(); };
-                const selectCategory = (cat) => { currentCategory.value = cat; window.scrollTo({top:0,behavior:'smooth'}); };
+                const closeModal = () => history.back();
+                const selectCategory = (cat) => { currentCategory.value = cat; scrollToTop(); };
                 const scrollToTop = () => window.scrollTo({top:0,behavior:'smooth'});
 
                 const handleUpload = async (e) => {
@@ -400,8 +406,5 @@
             }
         }).mount('#app');
     </script>
-    
-    <!-- 增加淡入动画支持 -->
-    <style> @keyframes fadeIn { to { opacity: 1; } } </style>
 </body>
 </html>
