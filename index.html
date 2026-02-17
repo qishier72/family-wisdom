@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>我们的家庭智慧</title>
+    
+    <!-- 引入 Tailwind CSS (样式库) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入图标库 -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    
+    <!-- 配置字体和自定义动画 -->
+    <style>
+        /* 苹果风格字体 */
+        body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif; }
+        
+        /* 隐藏滚动条但允许滚动 */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* 列表项的浮出动画 (Scroll Reveal) */
+        .reveal-card {
+            opacity: 0;
+            transform: translateY(40px) scale(0.95);
+            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); /* Apple 风格的缓动曲线 */
+        }
+        .reveal-card.visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /* 磨砂玻璃效果 */
+        .glass {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+    </style>
+</head>
+<body class="bg-[#F5F5F7] text-[#1D1D1F] min-h-screen selection:bg-blue-500 selection:text-white pb-24">
+
+    <div id="app" class="relative">
+        
+        <!-- 顶部 Header -->
+        <header class="sticky top-0 z-40 bg-[#F5F5F7]/80 glass border-b border-gray-200/50 pt-12 pb-4 px-6">
+            <div class="flex justify-between items-end mb-4">
+                <div>
+                    <h1 class="text-4xl font-extrabold tracking-tight text-black">家庭智慧</h1>
+                    <p class="text-xs text-gray-400 font-bold tracking-[0.2em] uppercase mt-1">Our Wisdom Database</p>
+                </div>
+                <!-- 顶部添加按钮 -->
+                <button @click="showModal = true" class="bg-black text-white rounded-full w-10 h-10 flex items-center justify-center shadow-lg active:scale-90 transition-transform">
+                    <i class="ri-add-line text-2xl"></i>
+                </button>
+            </div>
+
+            <!-- 分类胶囊 (横向滚动) -->
+            <div class="flex space-x-3 overflow-x-auto no-scrollbar py-2">
+                <button 
+                    v-for="cat in categories" 
+                    :key="cat"
+                    @click="currentCategory = cat"
+                    class="whitespace-nowrap px-5 py-2 rounded-full text-sm font-bold transition-all duration-300"
+                    :class="currentCategory === cat ? 'bg-black text-white shadow-lg scale-105' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'"
+                >
+                    {{ cat }}
+                </button>
+            </div>
+        </header>
+
+        <!-- 列表区域 (瀑布流/时间轴) -->
+        <main class="px-5 py-6 space-y-6 max-w-2xl mx-auto">
+            
+            <!-- 加载中提示 -->
+            <div v-if="loading" class="text-center py-20 opacity-50">
+                <i class="ri-loader-4-line animate-spin text-3xl"></i>
+                <p class="text-xs mt-2 font-mono">LOADING DATA...</p>
+            </div>
+
+            <!-- 空状态 -->
+            <div v-if="!loading && filteredList.length === 0" class="text-center py-20 opacity-40">
+                <i class="ri-inbox-line text-4xl"></i>
+                <p class="mt-2">暂无内容</p>
+            </div>
+
+            <!-- 卡片循环 -->
+            <!-- 这里的 :class 绑定了随机颜色和动画类 -->
+            <div 
+                v-for="(item, index) in filteredList" 
+                :key="item.id"
+                class="reveal-card relative rounded-3xl p-6 shadow-xl cursor-pointer overflow-hidden group active:scale-[0.98] transition-all duration-300"
+                :class="item.bg_style || 'bg-white'"
+                @click="openDetail(item)"
+                v-observe-visibility
+            >
+                <!-- 卡片内容 -->
+                <div class="relative z-10">
+                    <!-- 顶部标签 -->
+                    <div class="flex justify-between items-start mb-3 opacity-60">
+                        <span class="text-[10px] font-bold tracking-widest uppercase border border-black/10 px-2 py-0.5 rounded-md">{{ item.category }}</span>
+                        <!-- 类型图标 -->
+                        <i v-if="item.content_type === 'video'" class="ri-movie-fill"></i>
+                        <i v-else-if="item.content_type === 'image'" class="ri-image-2-fill"></i>
+                        <i v-else-if="item.content_type === 'link'" class="ri-link"></i>
+                        <i v-else class="ri-text"></i>
+                    </div>
+
+                    <!-- 标题 -->
+                    <h3 class="text-2xl font-black leading-tight mb-2 text-black/90">{{ item.title }}</h3>
+
+                    <!-- 内容摘要 (如果是文字) -->
+                    <p v-if="item.content_type === 'text'" class="text-sm font-medium text-black/60 line-clamp-3 mb-4">
+                        {{ item.content }}
+                    </p>
+                    
+                    <!-- 图片预览 -->
+                    <div v-if="item.content_type === 'image'" class="h-40 w-full rounded-xl overflow-hidden mb-4 bg-black/5">
+                        <img :src="item.content" class="w-full h-full object-cover">
+                    </div>
+
+                    <!-- 底部信息 -->
+                    <div class="flex items-center justify-between pt-4 border-t border-black/5 mt-2">
+                        <div>
+                            <p class="text-[10px] text-black/40 uppercase">智慧来自</p>
+                            <p class="text-sm font-bold text-black/80">{{ item.member_name }}</p>
+                        </div>
+                        <p class="text-[10px] font-mono text-black/40">{{ formatDate(item.created_at) }}</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 发布弹窗 (全屏) -->
+        <div v-if="showModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+            <!-- 背景遮罩 -->
+            <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" @click="showModal = false"></div>
+            
+            <!-- 弹窗主体 -->
+            <div class="bg-white w-full max-w-lg h-[90vh] sm:h-auto sm:rounded-3xl rounded-t-3xl shadow-2xl z-10 flex flex-col overflow-hidden animate-[slideUp_0.3s_ease-out]">
+                
+                <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-black">记录新智慧</h2>
+                    <button @click="showModal = false" class="bg-gray-100 text-gray-500 rounded-full w-8 h-8 flex items-center justify-center">
+                        <i class="ri-close-line text-xl"></i>
+                    </button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-6 space-y-6">
+                    <!-- 1. Who -->
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">我是谁 (发布者)</label>
+                        <select v-model="form.member_name" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-lg font-bold outline-none focus:ring-2 focus:ring-black/10">
+                            <option value="" disabled>请选择...</option>
+                            <option v-for="m in members" :value="m">{{ m }}</option>
+                        </select>
+                    </div>
+
+                    <!-- 2. Category -->
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">分类</label>
+                        <div class="flex flex-wrap gap-2">
+                            <button 
+                                v-for="cat in availableCategories" 
+                                :key="cat"
+                                @click="form.category = cat"
+                                class="px-3 py-1.5 rounded-lg text-sm border transition-colors"
+                                :class="form.category === cat ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-200'"
+                            >
+                                {{ cat }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 3. Content Type -->
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">内容类型</label>
+                        <div class="bg-gray-100 p-1 rounded-xl flex">
+                            <button 
+                                v-for="type in contentTypes" 
+                                @click="form.content_type = type.val"
+                                class="flex-1 py-2 rounded-lg text-xs font-bold transition-all"
+                                :class="form.content_type === type.val ? 'bg-white text-black shadow-sm' : 'text-gray-400'"
+                            >
+                                {{ type.label }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 4. Inputs -->
+                    <div class="space-y-4">
+                        <input type="text" v-model="form.title" placeholder="输入标题..." class="w-full text-2xl font-black border-b border-gray-200 py-2 focus:outline-none focus:border-black placeholder-gray-300">
+                        
+                        <!-- 动态输入区 -->
+                        <div v-if="form.content_type === 'text'">
+                            <textarea v-model="form.content" rows="4" placeholder="写下你的智慧..." class="w-full bg-gray-50 rounded-xl p-4 focus:outline-none"></textarea>
+                        </div>
+
+                        <div v-else-if="form.content_type === 'link'">
+                            <input type="url" v-model="form.content" placeholder="https://..." class="w-full bg-gray-50 rounded-xl p-4 text-blue-600">
+                        </div>
+
+                        <!-- 上传区 (Image/Video) -->
+                        <div v-else class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center bg-gray-50 relative">
+                            <input type="file" @change="handleUpload" class="absolute inset-0 opacity-0 w-full h-full cursor-pointer">
+                            <div v-if="uploading" class="text-blue-500 font-bold animate-pulse">上传中...</div>
+                            <div v-else-if="form.content">
+                                <span class="text-green-600 font-bold block">上传成功!</span>
+                                <span class="text-xs text-gray-400 truncate max-w-xs inline-block">{{ form.content }}</span>
+                            </div>
+                            <div v-else>
+                                <i class="ri-upload-cloud-2-line text-3xl text-gray-400"></i>
+                                <p class="text-sm text-gray-500 mt-2">点击上传文件</p>
+                            </div>
+                        </div>
+
+                        <input type="text" v-model="form.extra_note" placeholder="备注 (可选)..." class="w-full text-sm py-2 border-b border-gray-200 focus:outline-none placeholder-gray-300">
+                    </div>
+                </div>
+
+                <div class="p-4 border-t border-gray-100 bg-white">
+                    <button 
+                        @click="submit" 
+                        :disabled="!isFormValid || uploading"
+                        class="w-full bg-black text-white font-bold py-4 rounded-xl text-lg shadow-xl hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {{ uploading ? '请等待上传完成...' : '发布' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 详情页弹窗 (全屏查看) -->
+        <div v-if="detailItem" class="fixed inset-0 z-[60] flex items-center justify-center p-0 sm:p-4">
+            <div class="absolute inset-0 bg-white/90 backdrop-blur-xl" @click="detailItem = null"></div>
+            
+            <div class="relative w-full h-full sm:h-[85vh] sm:max-w-2xl bg-white sm:rounded-3xl flex flex-col shadow-2xl overflow-hidden animate-[zoomIn_0.2s_ease-out]">
+                <!-- 关闭按钮 -->
+                <button @click="detailItem = null" class="absolute top-4 right-4 z-20 bg-gray-100/50 backdrop-blur text-black w-10 h-10 rounded-full flex items-center justify-center">
+                    <i class="ri-close-line text-2xl"></i>
+                </button>
+
+                <div class="overflow-y-auto h-full p-8 custom-scrollbar">
+                    <span class="text-xs font-mono text-blue-600 uppercase bg-blue-50 px-2 py-1 rounded inline-block mb-4">{{ detailItem.category }}</span>
+                    <h1 class="text-3xl sm:text-4xl font-black text-black leading-tight mb-8">{{ detailItem.title }}</h1>
+
+                    <!-- 内容渲染 -->
+                    <div class="mb-8">
+                        <img v-if="detailItem.content_type === 'image'" :src="detailItem.content" class="w-full rounded-2xl shadow-lg">
+                        
+                        <video v-else-if="detailItem.content_type === 'video'" controls class="w-full rounded-2xl shadow-lg bg-black">
+                            <source :src="detailItem.content">
+                        </video>
+                        
+                        <a v-else-if="detailItem.content_type === 'link'" :href="detailItem.content" target="_blank" class="block p-6 bg-blue-50 rounded-xl text-blue-600 break-all text-center underline">
+                            <i class="ri-external-link-line inline mr-1"></i> {{ detailItem.content }}
+                        </a>
+                        
+                        <p v-else class="text-xl leading-relaxed text-gray-800 font-serif whitespace-pre-wrap">{{ detailItem.content }}</p>
+                    </div>
+
+                    <!-- Meta Info -->
+                    <div class="bg-gray-50 rounded-2xl p-6 space-y-4">
+                        <div class="flex justify-between border-b border-gray-200 pb-2">
+                            <span class="text-gray-400 text-sm">智慧来自</span>
+                            <span class="font-bold">{{ detailItem.member_name }}</span>
+                        </div>
+                        <div class="flex justify-between border-b border-gray-200 pb-2">
+                            <span class="text-gray-400 text-sm">发布时间</span>
+                            <span class="font-mono text-sm">{{ new Date(detailItem.created_at).toLocaleString() }}</span>
+                        </div>
+                        <div v-if="detailItem.extra_note">
+                            <span class="text-gray-400 text-sm block mb-1">备注</span>
+                            <p class="text-gray-600">{{ detailItem.extra_note }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 脚本区域：Vue 和 Supabase 逻辑 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+    <script>
+        // ==========================================
+        // 请在这里填入你的 Key (从 Supabase 设置里复制)
+        // ==========================================
+        const SUPABASE_URL = 'https://ugoksbtsjoktcmukmeuh.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnb2tzYnRzam9rdGNtdWttZXVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNjYyMDYsImV4cCI6MjA4Njg0MjIwNn0.11Vc-X5Y6qbGqOk6ydbb65VrEBYsuGRwLlQnj4nsVeA';
+        // ==========================================
+
+        const { createApp, ref, computed, reactive, onMounted } = Vue;
+
+        const app = createApp({
+            setup() {
+                // 初始化 Supabase
+                const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+                // 数据状态
+                const wisdomList = ref([]);
+                const loading = ref(true);
+                const showModal = ref(false);
+                const detailItem = ref(null);
+                const currentCategory = ref('全部');
+                const uploading = ref(false);
+
+                // 预设数据
+                const members = ['爷爷', '奶奶', '领航者', '彬彬有礼', '晴子老师', '回春丹主唱（少年版）', '先读说明书'];
+                const availableCategories = ['私房菜谱', '生活妙招', '家庭智慧', '人生经验', '美好时光', '其他'];
+                const contentTypes = [
+                    { val: 'text', label: '文字' }, 
+                    { val: 'image', label: '图片' }, 
+                    { val: 'video', label: '视频' }, 
+                    { val: 'link', label: '链接' }
+                ];
+
+                // 表单数据
+                const form = reactive({
+                    member_name: '', category: '', content_type: 'text', content: '', title: '', extra_note: ''
+                });
+
+                // 计算属性
+                const categories = computed(() => ['全部', ...availableCategories]);
+                const filteredList = computed(() => {
+                    if (currentCategory.value === '全部') return wisdomList.value;
+                    return wisdomList.value.filter(i => i.category === currentCategory.value);
+                });
+                const isFormValid = computed(() => form.member_name && form.category && form.title && form.content);
+
+                // 科技感颜色池 (带透明度的背景色)
+                const techColors = [
+                    'bg-blue-500/10 border-blue-200/20 text-blue-900',
+                    'bg-purple-500/10 border-purple-200/20 text-purple-900',
+                    'bg-emerald-500/10 border-emerald-200/20 text-emerald-900',
+                    'bg-orange-500/10 border-orange-200/20 text-orange-900',
+                    'bg-cyan-500/10 border-cyan-200/20 text-cyan-900',
+                    'bg-gray-500/10 border-gray-200/20 text-gray-900'
+                ];
+
+                // --- 方法 ---
+
+                // 获取数据
+                const fetchData = async () => {
+                    loading.value = true;
+                    const { data, error } = await supabase.from('family_wisdom').select('*').order('created_at', { ascending: false });
+                    if (!error) wisdomList.value = data;
+                    loading.value = false;
+                };
+
+                // 处理文件上传
+                const handleUpload = async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    uploading.value = true;
+                    
+                    const fileName = `${Date.now()}_${file.name}`;
+                    const { data, error } = await supabase.storage.from('family_uploads').upload(fileName, file);
+                    
+                    if (error) {
+                        alert('上传失败 (请检查 Bucket 是否创建): ' + error.message);
+                        uploading.value = false;
+                        return;
+                    }
+                    
+                    const { data: { publicUrl } } = supabase.storage.from('family_uploads').getPublicUrl(fileName);
+                    form.content = publicUrl;
+                    uploading.value = false;
+                };
+
+                // 提交表单
+                const submit = async () => {
+                    // 随机分配一个颜色样式
+                    const randomColor = techColors[Math.floor(Math.random() * techColors.length)];
+                    
+                    const { error } = await supabase.from('family_wisdom').insert([{
+                        ...form,
+                        bg_style: randomColor
+                    }]);
+
+                    if (error) {
+                        alert('发布失败: ' + error.message);
+                    } else {
+                        // 重置表单并刷新
+                        form.title = ''; form.content = ''; form.extra_note = '';
+                        showModal.value = false;
+                        fetchData();
+                    }
+                };
+
+                const openDetail = (item) => { detailItem.value = item; };
+                
+                const formatDate = (str) => {
+                    const d = new Date(str);
+                    return `${d.getMonth()+1}月${d.getDate()}日`;
+                }
+
+                // 初始化
+                onMounted(() => {
+                    fetchData();
+                });
+
+                return {
+                    wisdomList, loading, showModal, detailItem, currentCategory, uploading,
+                    members, categories, availableCategories, contentTypes, form,
+                    filteredList, isFormValid,
+                    handleUpload, submit, openDetail, formatDate
+                };
+            }
+        });
+
+        // 自定义指令：滚动监听动画
+        app.directive('observe-visibility', {
+            mounted(el) {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            el.classList.add('visible');
+                            observer.unobserve(el);
+                        }
+                    });
+                }, { threshold: 0.1 });
+                observer.observe(el);
+            }
+        });
+
+        app.mount('#app');
+    </script>
+
+    <!-- 补充动画样式 -->
+    <style>
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        @keyframes zoomIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</body>
+</html>
