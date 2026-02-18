@@ -1,410 +1,182 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>家庭智慧</title>
-    
-    <!-- 1. 核心库 -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
-    
-    <style>
-        /* 基础样式 */
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif; 
-            -webkit-tap-highlight-color: transparent;
-            background-color: #F2F2F7;
-            overscroll-behavior-y: none;
-        }
-        
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        input, select, textarea { font-size: 16px !important; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>家庭智慧</title>
 
-        /* 启动屏样式 */
-        #splash-screen {
-            position: fixed; inset: 0; z-index: 9999;
-            background: white;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transition: opacity 0.6s ease, visibility 0.6s;
-        }
-        .breathing { animation: breathe 2s infinite ease-in-out; }
-        @keyframes breathe {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.1); opacity: 0.8; }
-        }
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 
-        /* 智能导航栏动画 */
-        .smart-header {
-            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            will-change: transform;
-        }
-        .header-hidden {
-            transform: translateY(-120%);
-        }
+<style>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    background-color: #F2F2F7;
+    overscroll-behavior-y: none;
+}
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+input, select, textarea { font-size: 16px !important; }
 
-        .glass-nav {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-        }
-
-        .aurora-bg {
-            background: radial-gradient(circle at 50% 0%, rgba(100, 180, 255, 0.15) 0%, rgba(255, 255, 255, 0) 50%),
-                        radial-gradient(circle at 0% 0%, rgba(200, 100, 255, 0.05) 0%, rgba(255, 255, 255, 0) 40%);
-            min-height: 100vh;
-        }
-
-        .card-enter { animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; opacity: 0; transform: translateY(30px); }
-        @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
-        
-        [v-cloak] { display: none; }
-    </style>
+#splash-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.6s ease, visibility 0.6s;
+}
+.breathing { animation: breathe 2s infinite ease-in-out; }
+@keyframes breathe {
+    0%,100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+}
+[v-cloak] { display: none; }
+</style>
 </head>
-<body class="text-[#1D1D1F] aurora-bg">
 
-    <!-- 0. 启动屏 -->
-    <div id="splash-screen">
-        <div class="breathing flex flex-col items-center">
-            <i class="ri-home-heart-fill text-6xl text-blue-500 mb-4"></i>
-            <h1 class="text-2xl font-black tracking-widest text-black">家庭智慧</h1>
-            <p class="text-xs text-gray-400 mt-2 font-mono uppercase tracking-[0.3em]">Loading Wisdom...</p>
-        </div>
-        <!-- 错误提示容器 -->
-        <p id="error-msg" class="text-red-500 text-xs mt-8 px-8 text-center hidden"></p>
+<body class="text-[#1D1D1F]">
+
+<div id="splash-screen">
+    <div class="breathing flex flex-col items-center">
+        <i class="ri-home-heart-fill text-6xl text-blue-500 mb-4"></i>
+        <h1 class="text-2xl font-black tracking-widest text-black">家庭智慧</h1>
+        <p class="text-xs text-gray-400 mt-2 font-mono uppercase tracking-[0.3em]">Loading Wisdom...</p>
     </div>
+    <p id="error-msg" class="text-red-500 text-xs mt-8 px-8 text-center hidden"></p>
+</div>
 
-    <!-- Vue 应用挂载点 -->
-    <div id="app" v-cloak>
-        
-        <!-- 1. 智能 Header -->
-        <header 
-            class="fixed top-0 left-0 right-0 z-40 glass-nav pt-safe-top smart-header shadow-sm"
-            :class="{ 'header-hidden': !showHeader }"
-        >
-            <div class="px-6 pt-3 pb-2 text-center relative flex justify-center items-center cursor-pointer" @click="scrollToTop">
-                <h1 class="text-lg font-black tracking-tight text-black flex items-center gap-2">
-                    <i class="ri-home-heart-fill text-blue-500"></i> 家庭智慧
-                </h1>
-            </div>
+<div id="app" v-cloak>
 
-            <!-- 筛选栏 -->
-            <div class="px-4 pb-3">
-                <div class="flex flex-wrap justify-center gap-2 mb-2">
-                    <button 
-                        v-for="cat in categories" 
-                        :key="cat"
-                        @click="selectCategory(cat)"
-                        class="px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-200 border"
-                        :class="currentCategory === cat 
-                            ? 'bg-black text-white border-black shadow-md' 
-                            : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'"
-                    >
-                        {{ cat }}
-                    </button>
-                </div>
-                <div class="flex justify-center">
-                    <div class="relative bg-gray-100/50 rounded-lg px-3 py-1 flex items-center gap-1 cursor-pointer">
-                        <i class="ri-user-line text-xs text-gray-400"></i>
-                        <select v-model="currentMember" @change="scrollToTop" class="bg-transparent border-0 text-xs font-bold text-gray-600 focus:outline-none appearance-none pr-4">
-                            <option value="全部成员">全部成员</option>
-                            <option v-for="m in members" :value="m">{{ m }}</option>
-                        </select>
-                        <i class="ri-arrow-down-s-fill text-xs text-gray-400 absolute right-2 pointer-events-none"></i>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <!-- 占位高度 -->
-        <div class="h-32"></div>
-
-        <!-- 2. 内容区域 -->
-        <main class="px-4 pb-24 space-y-4 max-w-xl mx-auto min-h-screen">
-            
-            <!-- 加载中 -->
-            <div v-if="loading" class="flex flex-col items-center justify-center py-20 opacity-50 space-y-4">
-                <i class="ri-loader-4-line text-3xl animate-spin text-blue-500"></i>
-                <p class="text-xs font-bold text-gray-400">正在同步家庭数据...</p>
-            </div>
-
-            <!-- 空状态 -->
-            <div v-if="!loading && filteredList.length === 0" class="text-center py-20 opacity-40">
-                <div class="bg-white w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-                    <i class="ri-inbox-line text-3xl text-gray-300"></i>
-                </div>
-                <p class="text-sm text-gray-400 font-bold">暂无相关记录</p>
-                <button @click="resetFilters" class="text-blue-500 text-xs mt-2 font-bold underline">查看全部</button>
-            </div>
-
-            <!-- 列表卡片 -->
-            <div 
-                v-for="(item, index) in filteredList" 
-                :key="item.id"
-                class="card-enter bg-white rounded-[24px] shadow-[0_8px_30px_rgba(0,0,0,0.04)] overflow-hidden cursor-pointer active:scale-[0.98] transition-transform duration-200 border border-white"
-                :style="{ animationDelay: index * 0.05 + 's' }"
-                @click="openDetail(item)"
-            >
-                <div v-if="item.content_type === 'image'" class="h-48 w-full bg-gray-100 relative overflow-hidden">
-                    <img :src="item.content" class="w-full h-full object-cover">
-                </div>
-                <div v-else-if="item.content_type === 'video'" class="h-48 w-full bg-black relative flex items-center justify-center">
-                    <i class="ri-play-circle-fill text-white text-5xl opacity-80 backdrop-blur-sm rounded-full"></i>
-                </div>
-
-                <div class="p-5">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{{ item.category }}</span>
-                        <span class="text-[10px] text-gray-300 font-mono">{{ formatDate(item.created_at) }}</span>
-                    </div>
-
-                    <h3 class="text-lg font-black text-[#1D1D1F] leading-tight mb-2 line-clamp-2">{{ item.title }}</h3>
-                    <p v-if="item.content_type === 'text'" class="text-sm text-gray-500 line-clamp-3 mb-3 leading-relaxed">{{ item.content }}</p>
-
-                    <div class="flex items-center justify-between pt-3 border-t border-gray-50 mt-1">
-                        <div class="flex items-center gap-2">
-                            <div class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-400">
-                                {{ item.member_name.charAt(0) }}
-                            </div>
-                            <span class="text-xs font-bold text-gray-500">{{ item.member_name }}</span>
-                        </div>
-                        <div class="flex items-center gap-1" @click.stop="startRating(item)">
-                            <i class="ri-star-fill text-yellow-400 text-xs"></i>
-                            <span class="text-xs font-bold text-gray-600">{{ (item.rating_sum / (item.rating_count || 1)).toFixed(1) }}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
-
-        <!-- 3. 底部悬浮按钮 -->
-        <div class="fixed bottom-8 left-0 right-0 flex justify-center z-30 pointer-events-none transition-transform duration-500" :class="{'translate-y-32': !showHeader}">
-            <button 
-                @click="openAddModal"
-                class="pointer-events-auto bg-[#1D1D1F] text-white pl-5 pr-6 py-3.5 rounded-full shadow-2xl flex items-center gap-3 active:scale-90 transition-all duration-300 hover:bg-black border border-gray-700"
-            >
-                <div class="w-6 h-6 rounded-full bg-white text-black flex items-center justify-center">
-                    <i class="ri-add-line font-bold"></i>
-                </div>
-                <span class="font-bold text-sm tracking-wide">记录新智慧</span>
-            </button>
-        </div>
-
-        <!-- 发布弹窗 -->
-        <div v-if="showModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-            <div class="absolute inset-0 bg-black/40 backdrop-blur-md transition-opacity" @click="closeModal"></div>
-            <div class="bg-[#F9F9FB] w-full h-[95vh] sm:h-auto sm:max-w-lg sm:rounded-3xl rounded-t-[32px] shadow-2xl z-10 flex flex-col overflow-hidden animate-[slideUp_0.4s_cubic-bezier(0.16,1,0.3,1)]">
-                <div class="pt-5 pb-3 px-6 border-b border-gray-200/50 flex justify-between items-center bg-white/90 backdrop-blur z-20 sticky top-0">
-                    <h2 class="text-lg font-black text-black">记录智慧</h2>
-                    <button @click="closeModal" class="bg-gray-100 text-gray-500 rounded-full w-8 h-8 flex items-center justify-center hover:bg-gray-200"><i class="ri-close-line text-lg"></i></button>
-                </div>
-                <div class="flex-1 overflow-y-auto p-6 space-y-6 pb-32">
-                    <div class="space-y-2">
-                        <label class="text-xs font-black text-gray-400 uppercase">基础信息</label>
-                        <div class="flex gap-4">
-                            <select v-model="form.member_name" class="flex-1 bg-white rounded-2xl p-4 text-sm font-bold shadow-sm outline-none border border-transparent focus:border-blue-500"><option value="" disabled>我是谁?</option><option v-for="m in members" :value="m">{{ m }}</option></select>
-                            <select v-model="form.category" class="flex-1 bg-white rounded-2xl p-4 text-sm font-bold shadow-sm outline-none border border-transparent focus:border-blue-500"><option value="" disabled>分类</option><option v-for="c in availableCategories" :value="c">{{ c }}</option></select>
-                        </div>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="text-xs font-black text-gray-400 uppercase">内容形式</label>
-                        <div class="flex bg-gray-200 p-1 rounded-xl">
-                            <button v-for="t in contentTypes" @click="form.content_type=t.val" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all" :class="form.content_type===t.val?'bg-white shadow text-black':'text-gray-500'">{{ t.label }}</button>
-                        </div>
-                    </div>
-                    <div class="space-y-4">
-                        <input v-model="form.title" placeholder="输入标题..." class="w-full text-xl font-black bg-transparent border-b-2 border-gray-200 py-2 focus:border-black outline-none">
-                        
-                        <div v-if="['image','video'].includes(form.content_type)" class="border-2 border-dashed border-gray-300 rounded-2xl p-6 text-center bg-white relative">
-                            <input type="file" @change="handleUpload" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-                            <div v-if="uploading" class="text-blue-500 text-xs font-bold animate-pulse">上传中...</div>
-                            <div v-else-if="form.content" class="text-green-500 text-xs font-bold">已上传 (点击可更换)</div>
-                            <div v-else class="text-gray-400 text-sm font-bold flex flex-col items-center"><i class="ri-upload-cloud-line text-2xl mb-1"></i> 点击上传</div>
-                        </div>
-
-                        <textarea v-if="form.content_type==='text'" v-model="form.content" rows="5" placeholder="写点什么..." class="w-full bg-white rounded-2xl p-4 text-base shadow-sm outline-none"></textarea>
-                        <input v-if="form.content_type==='link'" v-model="form.content" placeholder="https://" class="w-full bg-blue-50 text-blue-600 rounded-2xl p-4 text-sm font-bold outline-none">
-                        <input v-model="form.extra_note" placeholder="备注..." class="w-full text-sm py-2 bg-transparent border-b border-gray-200 outline-none">
-                    </div>
-                    <button @click="submit" :disabled="!isFormValid||uploading" class="w-full bg-[#1D1D1F] text-white font-bold py-4 rounded-2xl shadow-xl active:scale-95 transition-all disabled:opacity-50">发布</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- 详情页 -->
-        <div v-if="detailItem" class="fixed inset-0 z-[60] flex items-center justify-center p-0 sm:p-4">
-            <div class="absolute inset-0 bg-white/95 backdrop-blur-xl" @click="closeDetail"></div>
-            <div class="relative w-full h-full sm:h-[90vh] sm:max-w-2xl bg-white sm:rounded-[32px] flex flex-col shadow-2xl overflow-hidden animate-[slideUp_0.3s_cubic-bezier(0.16,1,0.3,1)]">
-                <button @click="closeDetail" class="absolute top-5 right-5 z-20 bg-gray-100/80 backdrop-blur text-black w-9 h-9 rounded-full flex items-center justify-center"><i class="ri-close-line text-xl"></i></button>
-                <div class="overflow-y-auto h-full p-6 pb-32">
-                    <div class="flex items-center gap-2 mb-4">
-                        <span class="text-[10px] font-bold tracking-wider text-white bg-black px-2 py-1 rounded-md uppercase">{{ detailItem.category }}</span>
-                        <span class="text-xs font-bold text-gray-400">{{ detailItem.member_name }}</span>
-                    </div>
-                    <h1 class="text-2xl sm:text-3xl font-black text-black leading-tight mb-6">{{ detailItem.title }}</h1>
-                    <div class="mb-6 rounded-2xl overflow-hidden shadow-sm border border-gray-100">
-                        <img v-if="detailItem.content_type==='image'" :src="detailItem.content" class="w-full">
-                        <video v-else-if="detailItem.content_type==='video'" controls class="w-full bg-black aspect-video"><source :src="detailItem.content"></video>
-                        <a v-else-if="detailItem.content_type==='link'" :href="detailItem.content" target="_blank" class="block p-8 bg-blue-50 text-center text-blue-600 font-bold underline break-all">{{ detailItem.content }}</a>
-                        <p v-else class="p-5 bg-gray-50/50 text-lg leading-relaxed text-gray-800 whitespace-pre-wrap">{{ detailItem.content }}</p>
-                    </div>
-                    <div class="bg-gray-50 rounded-2xl p-5 space-y-2">
-                        <p class="text-xs text-gray-400 uppercase font-black">备注</p>
-                        <p class="text-sm text-gray-600">{{ detailItem.extra_note || '无' }}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 评分弹窗 -->
-        <div v-if="ratingItem" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm" @click="ratingItem=null">
-            <div class="bg-white p-6 rounded-3xl shadow-2xl text-center w-64" @click.stop>
-                <p class="text-sm font-bold text-gray-800 mb-4">打分</p>
-                <div class="flex justify-center gap-2 mb-2">
-                    <button v-for="i in 5" @click="submitRate(i)" class="text-3xl text-gray-200 hover:text-yellow-400 focus:text-yellow-400 transition-colors"><i class="ri-star-fill"></i></button>
-                </div>
-            </div>
-        </div>
-
+<header class="fixed top-0 left-0 right-0 z-40 bg-white shadow-sm">
+    <div class="px-6 py-3 text-center">
+        <h1 class="text-lg font-black">
+            <i class="ri-home-heart-fill text-blue-500"></i> 家庭智慧
+        </h1>
     </div>
+</header>
 
-    <!-- 3. 逻辑脚本 -->
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<div class="h-16"></div>
 
-    <script>
-        // ==========================================
-        // 双重保险：如果 Vue 或 Supabase 加载失败，
-        // 3秒后强制移除启动屏，显示错误信息
-        // ==========================================
-        setTimeout(() => {
-            const splash = document.getElementById('splash-screen');
-            if(splash && splash.style.opacity !== '0') {
-                console.warn('检测到加载超时，强制进入系统');
-                splash.style.opacity = '0';
-                setTimeout(() => splash.style.visibility = 'hidden', 600);
-            }
-        }, 3000);
+<main class="px-4 pb-24 space-y-4 max-w-xl mx-auto min-h-screen">
 
-        const { createApp, ref, computed, reactive, onMounted, onUnmounted } = Vue;
+<div v-if="loading" class="text-center py-20 opacity-50">
+    <i class="ri-loader-4-line text-3xl animate-spin text-blue-500"></i>
+    <p class="text-xs font-bold text-gray-400 mt-2">正在同步家庭数据...</p>
+</div>
 
-        createApp({
-            setup() {
-                // Key 已经填好
-                const SUPABASE_URL = 'https://ugoksbtsjoktcmukmeuh.supabase.co';
-                const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnb2tzYnRzam9rdGNtdWttZXVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNjYyMDYsImV4cCI6MjA4Njg0MjIwNn0.11Vc-X5Y6qbGqOk6ydbb65VrEBYsuGRwLlQnj4nsVeA';
+<div v-if="!loading && filteredList.length === 0" class="text-center py-20 opacity-40">
+    <p class="text-sm text-gray-400 font-bold">暂无相关记录</p>
+    <button @click="resetFilters" class="text-blue-500 text-xs mt-2 font-bold underline">
+        查看全部
+    </button>
+</div>
 
-                // 初始化 Supabase
-                let supabase;
-                try {
-                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                } catch (e) {
-                    alert("连接数据库失败，可能是网络问题或 Key 格式错误");
-                }
+<div v-for="item in filteredList" :key="item.id"
+class="bg-white rounded-2xl shadow p-4">
+    <h3 class="text-lg font-bold mb-2">{{ item.title }}</h3>
+    <p class="text-sm text-gray-600">{{ item.content }}</p>
+</div>
 
-                // 数据状态
-                const wisdomList = ref([]);
-                const loading = ref(true);
-                const showModal = ref(false);
-                const detailItem = ref(null);
-                const ratingItem = ref(null);
-                const uploading = ref(false);
-                const currentCategory = ref('全部');
-                const currentMember = ref('全部成员');
-                
-                // Header 智能显隐
-                const showHeader = ref(true);
-                const lastScrollTop = ref(0);
+</main>
+</div>
 
-                // 配置
-                const members = ['爷爷', '奶奶', '领航者', '彬彬有礼', '晴子老师', '回春丹主唱（少年版）', '先读说明书'];
-                const availableCategories = ['私房菜谱', '生活妙招', '家庭智慧', '人生经验', '美好时光', '其他'];
-                const contentTypes = [{ val: 'text', label: '文字' }, { val: 'image', label: '图片' }, { val: 'video', label: '视频' }, { val: 'link', label: '链接' }];
-                const form = reactive({ member_name: '', category: '', content_type: 'text', content: '', title: '', extra_note: '' });
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
-                // 计算属性
-                const categories = computed(() => ['全部', ...availableCategories]);
-                const isFormValid = computed(() => form.member_name && form.category && form.title && form.content);
-                const filteredList = computed(() => wisdomList.value.filter(item => (currentCategory.value === '全部' || item.category === currentCategory.value) && (currentMember.value === '全部成员' || item.member_name === currentMember.value)));
+<script>
 
-                // 核心方法
-                const fetchData = async () => {
-                    loading.value = true;
-                    if(supabase) {
-                        const { data, error } = await supabase.from('family_wisdom').select('*').order('created_at', { ascending: false });
-                        if (!error) wisdomList.value = data;
-                        else console.error(error);
-                    }
-                    loading.value = false;
-                    
-                    // 正常加载完成，移除启动屏
-                    const splash = document.getElementById('splash-screen');
-                    if(splash) {
-                        splash.style.opacity = '0';
-                        setTimeout(() => splash.style.visibility = 'hidden', 600);
-                    }
-                };
+setTimeout(() => {
+    const splash = document.getElementById('splash-screen');
+    if (splash && splash.style.opacity !== '0') {
+        splash.style.opacity = '0';
+        setTimeout(() => splash.style.visibility = 'hidden', 600);
+    }
+}, 4000);
 
-                const handleScroll = () => {
-                    const st = window.pageYOffset || document.documentElement.scrollTop;
-                    if (st < 0) return;
-                    if (Math.abs(st - lastScrollTop.value) > 10) {
-                        showHeader.value = st < lastScrollTop.value || st < 50;
-                        lastScrollTop.value = st;
-                    }
-                };
+if (!window.Vue) {
+    showError("Vue 加载失败，请检查网络");
+}
 
-                // 历史记录 API
-                window.addEventListener('popstate', () => {
-                    if (detailItem.value) detailItem.value = null;
-                    else if (showModal.value) showModal.value = false;
-                });
-                const openDetail = (item) => { history.pushState({modal:'detail'},null,''); detailItem.value = item; };
-                const closeDetail = () => history.back();
-                const openAddModal = () => { history.pushState({modal:'add'},null,''); showModal.value = true; };
-                const closeModal = () => history.back();
-                const selectCategory = (cat) => { currentCategory.value = cat; scrollToTop(); };
-                const scrollToTop = () => window.scrollTo({top:0,behavior:'smooth'});
+if (!window.supabase) {
+    showError("Supabase SDK 加载失败，请检查网络");
+}
 
-                const handleUpload = async (e) => {
-                    const file = e.target.files[0];
-                    if(!file) return;
-                    uploading.value = true;
-                    const fileName = `${Date.now()}_${file.name.replace(/[^\w\.]/g, '')}`;
-                    const { error } = await supabase.storage.from('family_uploads').upload(fileName, file);
-                    if(error) { alert('上传失败: ' + error.message); uploading.value = false; return; }
-                    const { data } = supabase.storage.from('family_uploads').getPublicUrl(fileName);
-                    form.content = data.publicUrl; uploading.value = false;
-                };
+function showError(msg) {
+    const el = document.getElementById('error-msg');
+    el.textContent = msg;
+    el.classList.remove('hidden');
+}
 
-                const submit = async () => {
-                    const { error } = await supabase.from('family_wisdom').insert([{ ...form, rating_sum: 5, rating_count: 1 }]);
-                    if(!error) { history.back(); Object.assign(form, {member_name:'', category:'', content_type:'text', content:'', title:'', extra_note:''}); fetchData(); }
-                };
+try {
 
-                const startRating = (item) => ratingItem.value = item;
-                const submitRate = async (score) => {
-                    if(!ratingItem.value) return;
-                    const item = ratingItem.value; item.rating_sum += score; item.rating_count += 1;
-                    await supabase.from('family_wisdom').update({rating_sum:item.rating_sum, rating_count:item.rating_count}).eq('id',item.id);
-                    ratingItem.value = null;
-                };
-                const formatDate = (str) => { const d = new Date(str); return `${d.getMonth()+1}/${d.getDate()}`; };
+const { createApp, ref, computed, reactive, onMounted } = Vue;
 
-                onMounted(() => { fetchData(); window.addEventListener('scroll', handleScroll); });
-                onUnmounted(() => window.removeEventListener('scroll', handleScroll));
+createApp({
+setup() {
 
-                return {
-                    wisdomList, loading, showModal, detailItem, ratingItem, uploading, currentCategory, currentMember, showHeader,
-                    categories, members, availableCategories, contentTypes, form, isFormValid, filteredList,
-                    resetFilters, handleUpload, submit, openDetail, closeDetail, openAddModal, closeModal, 
-                    startRating, submitRate, formatDate, selectCategory, scrollToTop
-                };
-            }
-        }).mount('#app');
-    </script>
+const SUPABASE_URL = 'https://ugoksbtsjoktcmukmeuh.supabase.co';
+const SUPABASE_KEY = '你的KEY';
+
+let supabase = null;
+
+if (window.supabase) {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+}
+
+const wisdomList = ref([]);
+const loading = ref(true);
+
+const currentCategory = ref('全部');
+const currentMember = ref('全部成员');
+
+const resetFilters = () => {
+    currentCategory.value = '全部';
+    currentMember.value = '全部成员';
+};
+
+const filteredList = computed(() => wisdomList.value);
+
+const fetchData = async () => {
+    if (!supabase) {
+        loading.value = false;
+        return;
+    }
+
+    const { data, error } = await supabase
+        .from('family_wisdom')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (!error) wisdomList.value = data || [];
+    loading.value = false;
+
+    const splash = document.getElementById('splash-screen');
+    splash.style.opacity = '0';
+    setTimeout(() => splash.style.visibility = 'hidden', 600);
+};
+
+onMounted(fetchData);
+
+return {
+    wisdomList,
+    loading,
+    filteredList,
+    resetFilters
+};
+
+}
+}).mount('#app');
+
+} catch (e) {
+    console.error(e);
+    showError("系统初始化失败，请打开控制台查看错误");
+}
+
+</script>
 </body>
 </html>
