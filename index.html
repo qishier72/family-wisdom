@@ -15,25 +15,18 @@
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif; 
             -webkit-tap-highlight-color: transparent;
         }
-        
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-        /* 磨砂玻璃 */
         .glass-nav {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(25px);
             -webkit-backdrop-filter: blur(25px);
             border-bottom: 1px solid rgba(0,0,0,0.05);
         }
-
-        /* 极光背景 */
         .aurora-bg {
             background: radial-gradient(circle at 50% 0%, rgba(100, 180, 255, 0.12) 0%, rgba(255, 255, 255, 0) 50%),
                         radial-gradient(circle at 0% 0%, rgba(200, 100, 255, 0.05) 0%, rgba(255, 255, 255, 0) 40%);
         }
-
-        /* 动画：卡片浮出 */
         .card-enter {
             animation: cardPopup 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
             opacity: 0;
@@ -42,11 +35,7 @@
         @keyframes cardPopup {
             to { opacity: 1; transform: translateY(0) scale(1); }
         }
-
-        /* 强制 16px 防止 iOS 自动缩放 */
         input, select, textarea { font-size: 16px !important; }
-
-        /* 平滑隐藏/显示导航栏 */
         .nav-transition {
             transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
@@ -56,7 +45,7 @@
 
     <div id="app">
         
-        <!-- 1. 智能感应 Header -->
+        <!-- 1. 顶部 Header -->
         <header 
             class="fixed top-0 left-0 right-0 z-40 glass-nav pt-safe-top nav-transition shadow-sm"
             :class="showHeader ? 'translate-y-0' : '-translate-y-[102%]'"
@@ -68,61 +57,34 @@
                 </h1>
             </div>
 
-            <!-- 筛选区：大字加粗 适老化 -->
-            <div class="px-4 pb-4">
+            <div class="px-4 pb-4 text-center">
                 <div class="flex flex-wrap justify-center gap-2.5 mb-4">
-                    <button 
-                        v-for="cat in categories" 
-                        :key="cat"
-                        @click="currentCategory = cat"
+                    <button v-for="cat in categories" :key="cat" @click="currentCategory = cat"
                         class="px-4 py-2.5 rounded-full text-[15px] font-black transition-all duration-200 border"
-                        :class="currentCategory === cat 
-                            ? 'bg-black text-white border-black shadow-md scale-105' 
-                            : 'bg-white text-gray-500 border-gray-100 hover:bg-gray-50'"
-                    >
+                        :class="currentCategory === cat ? 'bg-black text-white border-black shadow-md scale-105' : 'bg-white text-gray-500 border-gray-100'">
                         {{ cat }}
                     </button>
                 </div>
-
                 <div class="flex justify-center">
-                    <div class="relative inline-block w-full max-w-[240px]">
-                        <select v-model="currentMember" class="w-full appearance-none bg-gray-100/80 border-0 rounded-xl pl-4 pr-10 py-2.5 text-sm font-black text-gray-800 focus:ring-2 focus:ring-blue-500/20 outline-none text-center">
-                            <option value="全部成员">👤 全部成员筛选</option>
-                            <option v-for="m in members" :value="m">{{ m }}</option>
-                        </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-gray-400">
-                            <i class="ri-arrow-down-s-line text-lg"></i>
-                        </div>
-                    </div>
+                    <select v-model="currentMember" class="bg-gray-100/80 border-0 rounded-xl px-4 py-2.5 text-sm font-black text-gray-800 outline-none w-full max-w-[240px]">
+                        <option value="全部成员">👤 全部成员筛选</option>
+                        <option v-for="m in members" :value="m">{{ m }}</option>
+                    </select>
                 </div>
             </div>
         </header>
 
-        <!-- 2. 内容占位与列表 (因为 Header 是 fixed，需要 pt-40 预留空间) -->
-        <main class="px-4 pt-[180px] pb-4 space-y-6 max-w-xl mx-auto">
-            
-            <div v-if="loading" class="flex flex-col items-center justify-center py-20 opacity-50 space-y-4">
+        <!-- 2. 内容区域 -->
+        <main class="px-4 pt-[190px] pb-4 space-y-6 max-w-xl mx-auto">
+            <div v-if="loading" class="flex flex-col items-center py-20 opacity-50 space-y-4">
                 <div class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                <p class="text-xs font-mono tracking-widest">CONNECTING...</p>
+                <p class="text-xs font-mono">LOADING...</p>
             </div>
 
-            <div v-if="!loading && filteredList.length === 0" class="text-center py-20 opacity-40">
-                <div class="bg-gray-200 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="ri-search-2-line text-3xl text-gray-400"></i>
-                </div>
-                <p class="font-bold">暂无该分类内容</p>
-                <button @click="resetFilters" class="text-blue-600 text-sm mt-2 font-black underline">显示全部</button>
-            </div>
-
-            <!-- 卡片 -->
-            <div 
-                v-for="(item, index) in filteredList" 
-                :key="item.id"
-                class="card-enter bg-white rounded-[28px] shadow-[0_4px_25px_rgba(0,0,0,0.03)] overflow-hidden cursor-pointer active:scale-[0.97] transition-all duration-300 border border-white"
-                :style="{ animationDelay: index * 0.05 + 's' }"
-                @click="openDetail(item)"
-            >
-                <!-- 卡片媒体 -->
+            <div v-for="(item, index) in filteredList" :key="item.id"
+                class="card-enter bg-white rounded-[28px] shadow-[0_4px_25px_rgba(0,0,0,0.03)] overflow-hidden cursor-pointer active:scale-[0.97] transition-all border border-white"
+                :style="{ animationDelay: index * 0.05 + 's' }" @click="openDetail(item)">
+                
                 <div v-if="item.content_type === 'image'" class="h-56 w-full bg-gray-100 relative">
                     <img :src="item.content" class="w-full h-full object-cover">
                 </div>
@@ -130,202 +92,140 @@
                     <i class="ri-play-circle-fill text-white text-6xl opacity-90"></i>
                 </div>
 
-                <!-- 卡片内容 -->
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-4">
                         <span class="text-[11px] font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-lg uppercase tracking-wider">{{ item.category }}</span>
                         <span class="text-xs text-gray-400 font-mono">{{ formatDate(item.created_at) }}</span>
                     </div>
-
                     <h3 class="text-[22px] font-black text-[#1D1D1F] leading-tight mb-4">{{ item.title }}</h3>
-                    
-                    <p v-if="item.content_type === 'text'" class="text-[16px] text-gray-600 line-clamp-3 mb-5 leading-relaxed font-medium">
-                        {{ item.content }}
-                    </p>
-
                     <div class="flex items-center justify-between pt-5 border-t border-gray-50">
                         <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-sm font-black text-white">
-                                {{ item.member_name.charAt(0) }}
-                            </div>
+                            <div class="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-sm font-black text-white">{{ item.member_name.charAt(0) }}</div>
                             <span class="text-[15px] font-black text-gray-700">{{ item.member_name }}</span>
                         </div>
-
-                        <div class="flex items-center gap-1.5 bg-yellow-400/10 px-3 py-1.5 rounded-full" @click.stop="startRating(item)">
-                            <i class="ri-star-fill text-yellow-500 text-sm"></i>
-                            <span class="text-sm font-black text-gray-800">{{ (item.rating_sum / (item.rating_count || 1)).toFixed(1) }}</span>
+                        <div class="flex items-center gap-3">
+                            <!-- 评分 -->
+                            <div class="flex items-center gap-1 bg-yellow-400/10 px-3 py-1.5 rounded-full" @click.stop="startRating(item)">
+                                <i class="ri-star-fill text-yellow-500 text-sm"></i>
+                                <span class="text-sm font-black text-gray-800">{{ (item.rating_sum / (item.rating_count || 1)).toFixed(1) }}</span>
+                            </div>
+                            <!-- 删除按钮 -->
+                            <div class="w-9 h-9 flex items-center justify-center rounded-full bg-red-50 text-red-400 active:bg-red-500 active:text-white transition-colors" @click.stop="triggerDelete(item)">
+                                <i class="ri-delete-bin-6-line"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </main>
 
-        <!-- 3. 悬浮按钮 (灵动岛风格) -->
+        <!-- 3. 悬浮记录按钮 -->
         <div class="fixed bottom-10 left-0 right-0 flex justify-center z-40 pointer-events-none">
-            <button 
-                @click="openAddModal"
-                class="pointer-events-auto bg-[#1D1D1F] text-white pl-6 pr-8 py-4 rounded-full shadow-[0_15px_50px_rgba(0,0,0,0.3)] flex items-center gap-3 active:scale-90 transition-all duration-300 hover:bg-black group"
-            >
-                <div class="w-7 h-7 rounded-full bg-white text-black flex items-center justify-center group-hover:rotate-90 transition-transform">
-                    <i class="ri-add-line font-black text-lg"></i>
-                </div>
+            <button @click="openAddModal" class="pointer-events-auto bg-[#1D1D1F] text-white pl-6 pr-8 py-4 rounded-full shadow-2xl flex items-center gap-3 active:scale-90 transition-all">
+                <div class="w-7 h-7 rounded-full bg-white text-black flex items-center justify-center"><i class="ri-add-line font-black text-lg"></i></div>
                 <span class="font-black text-base tracking-wide">记录新智慧</span>
             </button>
         </div>
 
         <!-- 4. 发布弹窗 -->
         <div v-if="showModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-            <div class="absolute inset-0 bg-black/50 backdrop-blur-md transition-opacity" @click="closeModal"></div>
-            
-            <div class="bg-[#F9F9FB] w-full h-[95vh] sm:h-auto sm:max-w-lg sm:rounded-3xl rounded-t-[32px] shadow-2xl z-10 flex flex-col overflow-hidden animate-[cardPopup_0.4s_cubic-bezier(0.16,1,0.3,1)]">
-                
-                <div class="pt-6 pb-4 px-6 border-b border-gray-200/60 flex justify-between items-center bg-white z-20 sticky top-0">
+            <div class="absolute inset-0 bg-black/50 backdrop-blur-md" @click="closeModal"></div>
+            <div class="bg-[#F9F9FB] w-full h-[95vh] sm:h-auto sm:max-w-lg sm:rounded-3xl rounded-t-[32px] z-10 flex flex-col overflow-hidden animate-[cardPopup_0.4s_cubic-bezier(0.16,1,0.3,1)]">
+                <div class="pt-6 pb-4 px-6 border-b border-gray-200 flex justify-between items-center bg-white z-20">
                     <h2 class="text-xl font-black text-black">记录智慧</h2>
-                    <button @click="closeModal" class="bg-gray-100 text-gray-600 rounded-full w-10 h-10 flex items-center justify-center">
-                        <i class="ri-close-line text-2xl"></i>
-                    </button>
+                    <button @click="closeModal" class="bg-gray-100 text-gray-600 rounded-full w-10 h-10 flex items-center justify-center"><i class="ri-close-line text-2xl"></i></button>
                 </div>
-
                 <div class="flex-1 overflow-y-auto p-6 space-y-8 pb-40">
-                    <div class="space-y-4">
-                        <p class="text-sm font-black text-blue-600 uppercase tracking-widest">01. 身份与分类</p>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-[15px] font-black mb-2 text-gray-700">我是谁</label>
-                                <select v-model="form.member_name" class="w-full bg-white border border-gray-200 rounded-2xl p-4 font-black shadow-sm outline-none focus:border-blue-500">
-                                    <option value="" disabled>选择...</option>
-                                    <option v-for="m in members" :value="m">{{ m }}</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-[15px] font-black mb-2 text-gray-700">选个分类</label>
-                                <select v-model="form.category" class="w-full bg-white border border-gray-200 rounded-2xl p-4 font-black shadow-sm outline-none focus:border-blue-500">
-                                    <option value="" disabled>选择...</option>
-                                    <option v-for="c in availableCategories" :value="c">{{ c }}</option>
-                                </select>
-                            </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="block text-[15px] font-black mb-2 text-gray-700">我是谁</label>
+                             <select v-model="form.member_name" class="w-full bg-white border border-gray-200 rounded-2xl p-4 font-black outline-none"><option v-for="m in members" :value="m">{{ m }}</option></select>
+                        </div>
+                        <div><label class="block text-[15px] font-black mb-2 text-gray-700">选个分类</label>
+                             <select v-model="form.category" class="w-full bg-white border border-gray-200 rounded-2xl p-4 font-black outline-none"><option v-for="c in availableCategories" :value="c">{{ c }}</option></select>
                         </div>
                     </div>
-
-                    <div class="space-y-4">
-                        <p class="text-sm font-black text-blue-600 uppercase tracking-widest">02. 智慧形式</p>
-                        <div class="flex bg-gray-200/60 p-1.5 rounded-2xl">
-                            <button 
-                                v-for="type in contentTypes" 
-                                @click="form.content_type = type.val"
-                                class="flex-1 py-3.5 rounded-xl text-sm font-black transition-all"
-                                :class="form.content_type === type.val ? 'bg-white text-black shadow-md' : 'text-gray-500'"
-                            >
-                                {{ type.label }}
-                            </button>
-                        </div>
+                    <div class="flex bg-gray-200/60 p-1.5 rounded-2xl">
+                        <button v-for="type in contentTypes" @click="form.content_type = type.val" class="flex-1 py-3.5 rounded-xl text-sm font-black transition-all" :class="form.content_type === type.val ? 'bg-white text-black shadow-md' : 'text-gray-500'">{{ type.label }}</button>
                     </div>
-
                     <div class="space-y-5">
-                        <input type="text" v-model="form.title" placeholder="核心标题..." class="w-full text-2xl font-black bg-transparent border-0 border-b-2 border-gray-200 py-3 focus:border-black focus:ring-0 placeholder-gray-300">
-                        
-                        <div v-if="['image','video'].includes(form.content_type)" class="border-2 border-dashed border-gray-300 rounded-3xl p-10 text-center bg-white relative group shadow-sm">
+                        <input type="text" v-model="form.title" placeholder="核心标题..." class="w-full text-2xl font-black bg-transparent border-0 border-b-2 border-gray-200 py-3 outline-none focus:border-black">
+                        <div v-if="['image','video'].includes(form.content_type)" class="border-2 border-dashed border-gray-300 rounded-3xl p-10 text-center bg-white relative">
                             <input type="file" @change="handleUpload" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                            <div v-if="uploading" class="animate-pulse">
-                                <i class="ri-loader-4-line animate-spin text-3xl text-blue-500"></i>
-                                <p class="text-sm font-black text-blue-500 mt-2">上传中...</p>
-                            </div>
-                            <div v-else-if="form.content">
-                                <i class="ri-checkbox-circle-fill text-3xl text-green-500"></i>
-                                <p class="text-sm font-black text-green-600 mt-1">文件就绪</p>
-                            </div>
-                            <div v-else>
-                                <i class="ri-add-line text-3xl text-gray-300"></i>
-                                <p class="text-[15px] font-black text-gray-400 mt-2">点击上传多媒体文件</p>
-                            </div>
+                            <div v-if="uploading"><i class="ri-loader-4-line animate-spin text-3xl text-blue-500"></i></div>
+                            <div v-else-if="form.content"><i class="ri-checkbox-circle-fill text-3xl text-green-500"></i></div>
+                            <div v-else><i class="ri-add-line text-3xl text-gray-300"></i><p class="text-[15px] font-black text-gray-400 mt-2">上传媒体</p></div>
                         </div>
-
-                        <textarea v-if="form.content_type === 'text'" v-model="form.content" rows="6" placeholder="详细说说你的智慧..." class="w-full bg-white border border-gray-200 rounded-2xl p-5 text-[16px] font-medium focus:border-blue-500 outline-none shadow-sm"></textarea>
-                        
-                        <input v-if="form.content_type === 'link'" type="url" v-model="form.content" placeholder="输入链接 (https://...)" class="w-full bg-blue-50 border border-blue-100 rounded-2xl p-5 text-base font-black text-blue-600">
-
-                        <input type="text" v-model="form.extra_note" placeholder="备注说明 (可选)..." class="w-full text-base py-3 border-b border-gray-200 outline-none bg-transparent">
+                        <textarea v-if="form.content_type === 'text'" v-model="form.content" rows="6" placeholder="详细说说..." class="w-full bg-white border border-gray-200 rounded-2xl p-5 text-[16px] font-medium outline-none"></textarea>
+                        <input v-if="form.content_type === 'link'" type="url" v-model="form.content" placeholder="输入链接..." class="w-full bg-blue-50 border border-blue-100 rounded-2xl p-5 font-black text-blue-600">
                     </div>
-                    
-                    <button 
-                        @click="submit" 
-                        :disabled="!isFormValid || uploading"
-                        class="w-full bg-[#1D1D1F] text-white font-black py-5 rounded-2xl text-lg shadow-2xl active:scale-95 transition-all disabled:opacity-30"
-                    >
-                        {{ uploading ? '请稍候...' : '确认发布' }}
-                    </button>
+                    <button @click="submit" :disabled="!isFormValid || uploading" class="w-full bg-[#1D1D1F] text-white font-black py-5 rounded-2xl text-lg shadow-2xl active:scale-95 disabled:opacity-30">确认发布</button>
                 </div>
             </div>
         </div>
 
-        <!-- 5. 评分弹窗 -->
+        <!-- 5. 评分对话框 -->
         <div v-if="ratingItem" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm" @click="ratingItem = null">
-            <div class="bg-white p-8 rounded-[32px] shadow-2xl text-center w-80 animate-[cardPopup_0.2s_ease]" @click.stop>
+            <div class="bg-white p-8 rounded-[32px] shadow-2xl text-center w-80" @click.stop>
                 <p class="text-lg font-black text-gray-800 mb-6">智慧评级</p>
                 <div class="flex justify-center gap-3 mb-8">
-                    <button v-for="star in 5" :key="star" @click="submitRate(star)" class="text-4xl transition-colors text-gray-100 hover:text-yellow-400 focus:text-yellow-400">
-                        <i class="ri-star-fill"></i>
-                    </button>
+                    <button v-for="star in 5" :key="star" @click="submitRate(star)" class="text-4xl transition-colors text-gray-100 hover:text-yellow-400 focus:text-yellow-400"><i class="ri-star-fill"></i></button>
                 </div>
                 <button @click="ratingItem = null" class="text-[15px] font-black text-gray-400 underline">先不打了</button>
             </div>
         </div>
 
-        <!-- 6. 详情弹窗 -->
+        <!-- 6. 删除确认框 (新功能) -->
+        <div v-if="itemToDelete" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md" @click="itemToDelete = null">
+            <div class="bg-white p-8 rounded-[40px] shadow-2xl text-center w-[300px] animate-[cardPopup_0.3s_ease]" @click.stop>
+                <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+                    <i class="ri-error-warning-line"></i>
+                </div>
+                <h3 class="text-xl font-black text-gray-900 mb-2">确定删除吗？</h3>
+                <p class="text-sm text-gray-500 mb-8 font-medium">删除后这条智慧将永久消失，无法找回。</p>
+                <div class="space-y-3">
+                    <button @click="doDelete" class="w-full bg-red-500 text-white font-black py-4 rounded-2xl active:scale-95 transition-transform shadow-lg shadow-red-200">确定删除</button>
+                    <button @click="itemToDelete = null" class="w-full bg-gray-100 text-gray-500 font-black py-4 rounded-2xl active:scale-95 transition-transform">我再想想</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. 详情弹窗 -->
         <div v-if="detailItem" class="fixed inset-0 z-[60] flex items-center justify-center p-0 sm:p-4">
             <div class="absolute inset-0 bg-white/95 backdrop-blur-xl" @click="closeDetail"></div>
-            
             <div class="relative w-full h-full sm:h-[90vh] sm:max-w-2xl bg-white sm:rounded-[40px] flex flex-col shadow-2xl overflow-hidden animate-[cardPopup_0.3s_cubic-bezier(0.16,1,0.3,1)]">
-                <button @click="closeDetail" class="absolute top-6 right-6 z-20 bg-gray-100/80 backdrop-blur text-black w-10 h-10 rounded-full flex items-center justify-center">
-                    <i class="ri-close-line text-2xl font-black"></i>
-                </button>
-
+                <button @click="closeDetail" class="absolute top-6 right-6 z-20 bg-gray-100/80 backdrop-blur text-black w-10 h-10 rounded-full flex items-center justify-center"><i class="ri-close-line text-2xl font-black"></i></button>
                 <div class="overflow-y-auto h-full p-8 pb-40">
                     <div class="flex items-center gap-3 mb-6">
                          <span class="text-[11px] font-black tracking-widest text-white bg-black px-3 py-1.5 rounded-lg uppercase">{{ detailItem.category }}</span>
-                         <span class="text-sm font-black text-gray-500">智慧来自: {{ detailItem.member_name }}</span>
+                         <span class="text-sm font-black text-gray-500">来自: {{ detailItem.member_name }}</span>
                     </div>
-                    
-                    <h1 class="text-3xl font-black text-black leading-[1.2] mb-10">{{ detailItem.title }}</h1>
-
+                    <h1 class="text-3xl font-black text-black mb-10 leading-tight">{{ detailItem.title }}</h1>
                     <div class="mb-10 rounded-3xl overflow-hidden border border-gray-100 shadow-sm">
                         <img v-if="detailItem.content_type === 'image'" :src="detailItem.content" class="w-full bg-gray-50">
-                        <video v-else-if="detailItem.content_type === 'video'" controls class="w-full bg-black aspect-video">
-                            <source :src="detailItem.content">
-                        </video>
-                        <div v-else-if="detailItem.content_type === 'link'" class="p-10 bg-blue-50 text-center">
-                             <a :href="detailItem.content" target="_blank" class="text-blue-600 font-black underline text-xl break-all">{{ detailItem.content }}</a>
-                        </div>
-                        <div v-else class="p-6 bg-gray-50/50">
-                            <p class="text-xl leading-relaxed text-gray-800 whitespace-pre-wrap font-medium">{{ detailItem.content }}</p>
-                        </div>
+                        <video v-else-if="detailItem.content_type === 'video'" controls class="w-full bg-black aspect-video"><source :src="detailItem.content"></video>
+                        <div v-else-if="detailItem.content_type === 'link'" class="p-10 bg-blue-50 text-center"><a :href="detailItem.content" target="_blank" class="text-blue-600 font-black underline text-xl break-all">{{ detailItem.content }}</a></div>
+                        <div v-else class="p-6 bg-gray-50/50"><p class="text-xl leading-relaxed text-gray-800 whitespace-pre-wrap font-medium">{{ detailItem.content }}</p></div>
                     </div>
-
-                    <div class="bg-[#F2F2F7] rounded-3xl p-6 space-y-4">
-                        <p class="text-[11px] text-gray-400 font-black tracking-[0.2em] uppercase">Additional Notes</p>
-                        <p class="text-[17px] font-medium text-gray-700 leading-relaxed">{{ detailItem.extra_note || '发布人没有留下备注。' }}</p>
-                        <div class="border-t border-gray-200/50 pt-4 flex justify-between text-[11px] text-gray-400 font-mono">
-                            <span>ENTRY #{{ detailItem.id }}</span>
-                            <span>{{ new Date(detailItem.created_at).toLocaleString() }}</span>
-                        </div>
+                    <div class="bg-[#F2F2F7] rounded-3xl p-6 mb-8">
+                        <p class="text-[11px] text-gray-400 font-black tracking-[0.2em] uppercase mb-2">NOTES</p>
+                        <p class="text-[17px] font-medium text-gray-700">{{ detailItem.extra_note || '无备注' }}</p>
                     </div>
+                    <!-- 详情页内的删除按钮 -->
+                    <button @click="triggerDelete(detailItem)" class="flex items-center justify-center gap-2 w-full py-4 rounded-2xl border-2 border-red-50 text-red-500 font-black active:bg-red-50 transition-colors">
+                        <i class="ri-delete-bin-line"></i> 删除此帖
+                    </button>
                 </div>
             </div>
         </div>
 
     </div>
 
-    <!-- Scripts -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
     <script>
-        // ==========================================
-        // 配置区：请替换你的 Key
-        // ==========================================
         const SUPABASE_URL = 'https://ugoksbtsjoktcmukmeuh.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnb2tzYnRzam9rdGNtdWttZXVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNjYyMDYsImV4cCI6MjA4Njg0MjIwNn0.11Vc-X5Y6qbGqOk6ydbb65VrEBYsuGRwLlQnj4nsVeA';
-        // ==========================================
 
         const { createApp, ref, computed, reactive, onMounted, onUnmounted } = Vue;
 
@@ -333,49 +233,32 @@
             setup() {
                 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-                // --- 状态 ---
                 const wisdomList = ref([]);
                 const loading = ref(true);
                 const showModal = ref(false);
                 const detailItem = ref(null);
                 const ratingItem = ref(null);
+                const itemToDelete = ref(null); // 删除确认状态
                 const uploading = ref(false);
                 const currentCategory = ref('全部');
                 const currentMember = ref('全部成员');
-
-                // --- 自动隐藏 Header 逻辑 ---
                 const showHeader = ref(true);
                 let lastScrollY = 0;
 
                 const handleScroll = () => {
                     const currentScrollY = window.scrollY;
-                    // 1. 在最顶端始终显示
-                    if (currentScrollY <= 10) {
-                        showHeader.value = true;
-                        return;
-                    }
-                    // 2. 向上滚动（看内容）隐藏，向下滑动（往回翻）显示
-                    if (currentScrollY > lastScrollY && currentScrollY > 150) {
-                        showHeader.value = false; // Hide on scroll down
-                    } else if (currentScrollY < lastScrollY) {
-                        showHeader.value = true; // Show on scroll up
-                    }
+                    if (currentScrollY <= 10) { showHeader.value = true; return; }
+                    if (currentScrollY > lastScrollY && currentScrollY > 150) { showHeader.value = false; }
+                    else if (currentScrollY < lastScrollY) { showHeader.value = true; }
                     lastScrollY = currentScrollY;
                 };
 
-                // --- 配置 ---
                 const members = ['爷爷', '奶奶', '领航者', '彬彬有礼', '晴子老师', '回春丹主唱（少年版）', '先读说明书'];
                 const availableCategories = ['私房菜谱', '生活妙招', '家庭智慧', '人生经验', '美好时光', '其他'];
-                const contentTypes = [
-                    { val: 'text', label: '文字' }, { val: 'image', label: '图片' }, 
-                    { val: 'video', label: '视频' }, { val: 'link', label: '链接' }
-                ];
+                const contentTypes = [{ val: 'text', label: '文字' }, { val: 'image', label: '图片' }, { val: 'video', label: '视频' }, { val: 'link', label: '链接' }];
 
-                const form = reactive({
-                    member_name: '', category: '', content_type: 'text', content: '', title: '', extra_note: ''
-                });
+                const form = reactive({ member_name: '', category: '', content_type: 'text', content: '', title: '', extra_note: '' });
 
-                // --- 计算属性 ---
                 const categories = computed(() => ['全部', ...availableCategories]);
                 const isFormValid = computed(() => form.member_name && form.category && form.title && form.content);
                 const filteredList = computed(() => {
@@ -386,25 +269,37 @@
                     });
                 });
 
-                // --- 历史记录/左滑手势 ---
                 window.addEventListener('popstate', () => {
-                    if (detailItem.value) detailItem.value = null;
+                    if (itemToDelete.value) itemToDelete.value = null;
+                    else if (detailItem.value) detailItem.value = null;
                     else if (showModal.value) showModal.value = false;
                 });
 
-                const openDetail = (item) => { 
-                    history.pushState({ modal: 'detail' }, null, '');
-                    detailItem.value = item; 
-                };
+                const openDetail = (item) => { history.pushState({ modal: 'detail' }, null, ''); detailItem.value = item; };
                 const closeDetail = () => history.back();
-
-                const openAddModal = () => {
-                    history.pushState({ modal: 'add' }, null, '');
-                    showModal.value = true;
-                };
+                const openAddModal = () => { history.pushState({ modal: 'add' }, null, ''); showModal.value = true; };
                 const closeModal = () => history.back();
 
-                // --- 业务方法 ---
+                // 删除逻辑
+                const triggerDelete = (item) => {
+                    history.pushState({ modal: 'delete' }, null, '');
+                    itemToDelete.value = item;
+                };
+                const doDelete = async () => {
+                    if (!itemToDelete.value) return;
+                    const id = itemToDelete.value.id;
+                    const { error } = await supabase.from('family_wisdom').delete().eq('id', id);
+                    if (!error) {
+                        wisdomList.value = wisdomList.value.filter(i => i.id !== id);
+                        itemToDelete.value = null;
+                        detailItem.value = null; // 如果在详情页删的，关掉详情页
+                        // 清理历史记录中多出的那条
+                        history.back();
+                    } else {
+                        alert('删除失败，请检查数据库权限');
+                    }
+                };
+
                 const fetchData = async () => {
                     loading.value = true;
                     const { data, error } = await supabase.from('family_wisdom').select('*').order('created_at', { ascending: false });
@@ -425,14 +320,8 @@
                 };
 
                 const submit = async () => {
-                    const { error } = await supabase.from('family_wisdom').insert([{
-                        ...form, rating_sum: 5, rating_count: 1
-                    }]);
-                    if (!error) {
-                        history.back(); 
-                        Object.assign(form, { member_name: '', category: '', content_type: 'text', content: '', title: '', extra_note: '' });
-                        fetchData();
-                    }
+                    const { error } = await supabase.from('family_wisdom').insert([{ ...form, rating_sum: 5, rating_count: 1 }]);
+                    if (!error) { history.back(); Object.assign(form, { member_name: '', category: '', content_type: 'text', content: '', title: '', extra_note: '' }); fetchData(); }
                 };
 
                 const startRating = (item) => { ratingItem.value = item; };
@@ -440,33 +329,21 @@
                     if (!ratingItem.value) return;
                     const item = ratingItem.value;
                     item.rating_sum += score; item.rating_count += 1;
-                    await supabase.from('family_wisdom').update({
-                        rating_sum: item.rating_sum, rating_count: item.rating_count
-                    }).eq('id', item.id);
+                    await supabase.from('family_wisdom').update({ rating_sum: item.rating_sum, rating_count: item.rating_count }).eq('id', item.id);
                     ratingItem.value = null;
                 };
 
-                const formatDate = (str) => {
-                    const d = new Date(str);
-                    return `${d.getMonth()+1}/${d.getDate()}`;
-                };
+                const formatDate = (str) => { const d = new Date(str); return `${d.getMonth()+1}/${d.getDate()}`; };
 
-                onMounted(() => {
-                    fetchData();
-                    window.addEventListener('scroll', handleScroll, { passive: true });
-                });
-
-                onUnmounted(() => {
-                    window.removeEventListener('scroll', handleScroll);
-                });
+                onMounted(() => { fetchData(); window.addEventListener('scroll', handleScroll, { passive: true }); });
+                onUnmounted(() => { window.removeEventListener('scroll', handleScroll); });
 
                 return {
-                    wisdomList, loading, showModal, detailItem, ratingItem, uploading, showHeader,
+                    wisdomList, loading, showModal, detailItem, ratingItem, itemToDelete, uploading, showHeader,
                     currentCategory, currentMember, categories, members, availableCategories, contentTypes,
                     form, isFormValid, filteredList,
-                    fetchData, handleUpload, submit, 
-                    openDetail, closeDetail, openAddModal, closeModal, 
-                    startRating, submitRate, formatDate
+                    fetchData, handleUpload, submit, openDetail, closeDetail, openAddModal, closeModal, 
+                    triggerDelete, doDelete, startRating, submitRate, formatDate
                 };
             }
         }).mount('#app');
