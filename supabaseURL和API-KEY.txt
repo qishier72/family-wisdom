@@ -1,0 +1,3 @@
+const SUPABASE_URL = 'https://ugoksbtsjoktcmukmeuh.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnb2tzYnRzam9rdGNtdWttZXVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNjYyMDYsImV4cCI6MjA4Njg0MjIwNn0.11Vc-X5Y6qbGqOk6ydbb65VrEBYsuGRwLlQnj4nsVeA';
+        // ==========================================
