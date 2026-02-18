@@ -11,6 +11,11 @@
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     
     <style>
+        /* 【关键修复】Vue 挂载前隐藏全文，防止删除框等元素闪烁 */
+        [v-cloak] {
+            display: none !important;
+        }
+
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif; 
             -webkit-tap-highlight-color: transparent;
@@ -43,7 +48,8 @@
 </head>
 <body class="bg-[#F2F2F7] text-[#1D1D1F] min-h-screen pb-32 aurora-bg">
 
-    <div id="app">
+    <!-- 【关键修复】加上 v-cloak -->
+    <div id="app" v-cloak>
         
         <!-- 1. 顶部 Header -->
         <header 
@@ -104,12 +110,10 @@
                             <span class="text-[15px] font-black text-gray-700">{{ item.member_name }}</span>
                         </div>
                         <div class="flex items-center gap-3">
-                            <!-- 评分 -->
                             <div class="flex items-center gap-1 bg-yellow-400/10 px-3 py-1.5 rounded-full" @click.stop="startRating(item)">
                                 <i class="ri-star-fill text-yellow-500 text-sm"></i>
                                 <span class="text-sm font-black text-gray-800">{{ (item.rating_sum / (item.rating_count || 1)).toFixed(1) }}</span>
                             </div>
-                            <!-- 删除按钮 -->
                             <div class="w-9 h-9 flex items-center justify-center rounded-full bg-red-50 text-red-400 active:bg-red-500 active:text-white transition-colors" @click.stop="triggerDelete(item)">
                                 <i class="ri-delete-bin-6-line"></i>
                             </div>
@@ -174,7 +178,7 @@
             </div>
         </div>
 
-        <!-- 6. 删除确认框 (新功能) -->
+        <!-- 6. 删除确认框 (已修复闪烁) -->
         <div v-if="itemToDelete" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md" @click="itemToDelete = null">
             <div class="bg-white p-8 rounded-[40px] shadow-2xl text-center w-[300px] animate-[cardPopup_0.3s_ease]" @click.stop>
                 <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
@@ -210,7 +214,6 @@
                         <p class="text-[11px] text-gray-400 font-black tracking-[0.2em] uppercase mb-2">NOTES</p>
                         <p class="text-[17px] font-medium text-gray-700">{{ detailItem.extra_note || '无备注' }}</p>
                     </div>
-                    <!-- 详情页内的删除按钮 -->
                     <button @click="triggerDelete(detailItem)" class="flex items-center justify-center gap-2 w-full py-4 rounded-2xl border-2 border-red-50 text-red-500 font-black active:bg-red-50 transition-colors">
                         <i class="ri-delete-bin-line"></i> 删除此帖
                     </button>
@@ -238,7 +241,7 @@
                 const showModal = ref(false);
                 const detailItem = ref(null);
                 const ratingItem = ref(null);
-                const itemToDelete = ref(null); // 删除确认状态
+                const itemToDelete = ref(null);
                 const uploading = ref(false);
                 const currentCategory = ref('全部');
                 const currentMember = ref('全部成员');
@@ -254,7 +257,7 @@
                 };
 
                 const members = ['爷爷', '奶奶', '领航者', '彬彬有礼', '晴子老师', '回春丹主唱（少年版）', '先读说明书'];
-                const availableCategories = ['私房菜谱', '生活妙招', '家庭智慧', '人生经验', '美好时光'];
+                const availableCategories = ['私房菜谱', '生活妙招', '家庭智慧', '人生经验', '美好时光', '其他'];
                 const contentTypes = [{ val: 'text', label: '文字' }, { val: 'image', label: '图片' }, { val: 'video', label: '视频' }, { val: 'link', label: '链接' }];
 
                 const form = reactive({ member_name: '', category: '', content_type: 'text', content: '', title: '', extra_note: '' });
@@ -280,7 +283,6 @@
                 const openAddModal = () => { history.pushState({ modal: 'add' }, null, ''); showModal.value = true; };
                 const closeModal = () => history.back();
 
-                // 删除逻辑
                 const triggerDelete = (item) => {
                     history.pushState({ modal: 'delete' }, null, '');
                     itemToDelete.value = item;
@@ -292,8 +294,7 @@
                     if (!error) {
                         wisdomList.value = wisdomList.value.filter(i => i.id !== id);
                         itemToDelete.value = null;
-                        detailItem.value = null; // 如果在详情页删的，关掉详情页
-                        // 清理历史记录中多出的那条
+                        detailItem.value = null;
                         history.back();
                     } else {
                         alert('删除失败，请检查数据库权限');
@@ -350,4 +351,3 @@
     </script>
 </body>
 </html>
-
