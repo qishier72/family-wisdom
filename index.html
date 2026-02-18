@@ -18,11 +18,9 @@
             overscroll-behavior-y: none;
         }
         
-        /* 隐藏滚动条 */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* iOS 输入框防缩放 */
         input, select, textarea { font-size: 16px !important; }
 
         /* 启动屏样式 */
@@ -47,7 +45,6 @@
             transform: translateY(-120%);
         }
 
-        /* 磨砂玻璃 */
         .glass-nav {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
@@ -55,18 +52,15 @@
             border-bottom: 1px solid rgba(0,0,0,0.05);
         }
 
-        /* 极光背景 */
         .aurora-bg {
             background: radial-gradient(circle at 50% 0%, rgba(100, 180, 255, 0.15) 0%, rgba(255, 255, 255, 0) 50%),
                         radial-gradient(circle at 0% 0%, rgba(200, 100, 255, 0.05) 0%, rgba(255, 255, 255, 0) 40%);
             min-height: 100vh;
         }
 
-        /* 动画类 */
         .card-enter { animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; opacity: 0; transform: translateY(30px); }
         @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
         
-        /* 防止 Vue 加载前的乱码，但在启动屏遮挡下其实不重要，为了保险保留 */
         [v-cloak] { display: none; }
     </style>
 </head>
@@ -79,14 +73,14 @@
             <h1 class="text-2xl font-black tracking-widest text-black">家庭智慧</h1>
             <p class="text-xs text-gray-400 mt-2 font-mono uppercase tracking-[0.3em]">Loading Wisdom...</p>
         </div>
-        <!-- 这里的 Loading 文字会在出错时变成错误提示 -->
+        <!-- 错误提示容器 -->
         <p id="error-msg" class="text-red-500 text-xs mt-8 px-8 text-center hidden"></p>
     </div>
 
     <!-- Vue 应用挂载点 -->
     <div id="app" v-cloak>
         
-        <!-- 1. 智能 Header (向下滚隐藏) -->
+        <!-- 1. 智能 Header -->
         <header 
             class="fixed top-0 left-0 right-0 z-40 glass-nav pt-safe-top smart-header shadow-sm"
             :class="{ 'header-hidden': !showHeader }"
@@ -131,7 +125,7 @@
         <!-- 2. 内容区域 -->
         <main class="px-4 pb-24 space-y-4 max-w-xl mx-auto min-h-screen">
             
-            <!-- 列表加载中的转圈 (如果启动屏没了，但数据还在请求，显示这个) -->
+            <!-- 加载中 -->
             <div v-if="loading" class="flex flex-col items-center justify-center py-20 opacity-50 space-y-4">
                 <i class="ri-loader-4-line text-3xl animate-spin text-blue-500"></i>
                 <p class="text-xs font-bold text-gray-400">正在同步家庭数据...</p>
@@ -154,7 +148,6 @@
                 :style="{ animationDelay: index * 0.05 + 's' }"
                 @click="openDetail(item)"
             >
-                <!-- 封面 -->
                 <div v-if="item.content_type === 'image'" class="h-48 w-full bg-gray-100 relative overflow-hidden">
                     <img :src="item.content" class="w-full h-full object-cover">
                 </div>
@@ -162,7 +155,6 @@
                     <i class="ri-play-circle-fill text-white text-5xl opacity-80 backdrop-blur-sm rounded-full"></i>
                 </div>
 
-                <!-- 内容 -->
                 <div class="p-5">
                     <div class="flex justify-between items-center mb-2">
                         <span class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{{ item.category }}</span>
@@ -188,7 +180,7 @@
             </div>
         </main>
 
-        <!-- 3. 底部悬浮按钮 (智能隐藏) -->
+        <!-- 3. 底部悬浮按钮 -->
         <div class="fixed bottom-8 left-0 right-0 flex justify-center z-30 pointer-events-none transition-transform duration-500" :class="{'translate-y-32': !showHeader}">
             <button 
                 @click="openAddModal"
@@ -284,29 +276,34 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
     <script>
+        // ==========================================
+        // 双重保险：如果 Vue 或 Supabase 加载失败，
+        // 3秒后强制移除启动屏，显示错误信息
+        // ==========================================
+        setTimeout(() => {
+            const splash = document.getElementById('splash-screen');
+            if(splash && splash.style.opacity !== '0') {
+                console.warn('检测到加载超时，强制进入系统');
+                splash.style.opacity = '0';
+                setTimeout(() => splash.style.visibility = 'hidden', 600);
+            }
+        }, 3000);
+
         const { createApp, ref, computed, reactive, onMounted, onUnmounted } = Vue;
 
         createApp({
             setup() {
-                // ==========================================
-                // ⚠️ 关键点：请在这里替换你的 Supabase Key ⚠️
-                // ==========================================
+                // Key 已经填好
                 const SUPABASE_URL = 'https://ugoksbtsjoktcmukmeuh.supabase.co';
                 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnb2tzYnRzam9rdGNtdWttZXVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNjYyMDYsImV4cCI6MjA4Njg0MjIwNn0.11Vc-X5Y6qbGqOk6ydbb65VrEBYsuGRwLlQnj4nsVeA';
-                // ==========================================
-
-                // 安全检查：如果 Key 没填，直接在启动屏显示错误
-                if (SUPABASE_URL.includes('你的_')) {
-                    const errorMsg = document.getElementById('error-msg');
-                    if(errorMsg) {
-                        errorMsg.textContent = "配置错误：请编辑 index.html，在代码底部填入正确的 Supabase URL 和 Key。";
-                        errorMsg.classList.remove('hidden');
-                    }
-                    throw new Error("Missing Credentials");
-                }
 
                 // 初始化 Supabase
-                const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                let supabase;
+                try {
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                } catch (e) {
+                    alert("连接数据库失败，可能是网络问题或 Key 格式错误");
+                }
 
                 // 数据状态
                 const wisdomList = ref([]);
@@ -336,11 +333,14 @@
                 // 核心方法
                 const fetchData = async () => {
                     loading.value = true;
-                    const { data, error } = await supabase.from('family_wisdom').select('*').order('created_at', { ascending: false });
-                    if (!error) wisdomList.value = data;
+                    if(supabase) {
+                        const { data, error } = await supabase.from('family_wisdom').select('*').order('created_at', { ascending: false });
+                        if (!error) wisdomList.value = data;
+                        else console.error(error);
+                    }
                     loading.value = false;
                     
-                    // 数据加载完成，移除启动屏
+                    // 正常加载完成，移除启动屏
                     const splash = document.getElementById('splash-screen');
                     if(splash) {
                         splash.style.opacity = '0';
@@ -408,4 +408,3 @@
     </script>
 </body>
 </html>
-
